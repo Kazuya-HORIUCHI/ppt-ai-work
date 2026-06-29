@@ -97,12 +97,14 @@ const sectionLabels = {
   conclusion: "結論｜差別化戦略",
 };
 
-// spec.kind からフッターに表示するセクションラベルを解決する。
+// spec からフッターに表示するセクションラベルを解決する。
 // null を返した場合はフッター自体を描画しない（タイトルスライド等）。
-function sectionOf(kind) {
-  if (kind === "title") return null;
-  if (kind === "divider") return "";
-  const key = kind.split("-")[0];
+// 汎用 kind（例: "bullets" / "table"）は kind 接頭辞からセクションを推測できないため、
+// spec.section（sectionLabels のキー）を明示する。
+function sectionOf(spec) {
+  if (spec.kind === "title") return null;
+  if (spec.kind === "divider") return "";
+  const key = spec.section ?? spec.kind.split("-")[0];
   return sectionLabels[key] ?? "要確認";
 }
 
@@ -110,27 +112,185 @@ const slidesPlan = [
   { kind: "title" },
   { kind: "intro" },
   { kind: "divider", label: "Section 1", title: "大手音楽教室（ヤマハ・カワイ）の現状分析" },
-  { kind: "yamaha-target" },
+  {
+    kind: "bullets",
+    section: "yamaha",
+    title: "ターゲット層：幼児〜ジュニア層とその保護者",
+    message: "メインは 4〜5 歳の幼児期から小学校低学年。児童期に読譜の壁に直面する",
+    items: [
+      "メインターゲット：4〜5 歳の幼児期〜小学校低学年のジュニア層、およびその保護者",
+      "幼児期は「楽しく歌って弾く」で満足できる",
+      "児童期に「曲が難しくなり、模倣や耳コピだけでは弾けなくなる」課題に直面",
+      "家で子どもが一人で譜読みできず、練習のたびに親子で多大なストレスを抱える",
+      "保護者は「子供の自立的な読譜力の欠如」に強い危機感を抱き始める",
+    ],
+  },
   { kind: "yamaha-service" },
-  { kind: "yamaha-price" },
+  {
+    kind: "table",
+    section: "yamaha",
+    title: "料金プラン：堅固な定額課金（サブスクリプション）モデル",
+    message: "入会金 + 月謝 + 運営管理費。半期ごとに数千円のオリジナル教材費が別途発生",
+    header: ["教室・コース名", "入会金（税込）", "月謝（税込）", "運営管理費", "レッスン形態・回数"],
+    rows: [
+      [
+        "ヤマハ音楽教室（幼児科等）",
+        "5,500〜11,000 円程度",
+        "8,250〜11,330 円程度",
+        "教室により別途発生",
+        "グループ／年 40 回／1 回 50 分",
+      ],
+      [
+        "カワイ 3 歳ソルフェージュ",
+        "11,000 円（標準）",
+        "8,800 円",
+        "月額 220 円程度",
+        "個人／月 3 回（年 36 回）／1 回 30 分",
+      ],
+    ],
+    colW: [3.5, 2.2, 2.2, 1.93, 2.2],
+    rowH: 0.7,
+    note: { text: "※ 別途、半期ごとに数千円のオリジナル教材費が発生する。" },
+  },
   { kind: "yamaha-marketing" },
   { kind: "yamaha-approach" },
   { kind: "yamaha-review" },
   { kind: "divider", label: "Section 2", title: "ピアノ講師育成ビジネスの現状分析" },
-  { kind: "trainer-target" },
+  {
+    kind: "bullets",
+    section: "trainer",
+    title: "ターゲット層：個人ピアノ講師・幼児教育関係者",
+    message: "教室経営の孤独、教材研究の時間負担、初心者向け読譜指導ノウハウの欠如に悩む",
+    items: [
+      "メイン：個人ピアノ教室／音楽教室主宰の個人事業主、保育士・幼児教育関係者",
+      "幼児や初心者が退屈せずに読譜を学べる指導ノウハウがない",
+      "生徒が楽譜を読めず、宿題未実施、レッスン時間が譜読みに圧迫される",
+      "教材研究・準備・手作り教具にかかる時間がプライベートを圧迫",
+      "孤独な教室経営の中で、指導法・集客を相談できるプラットフォームがない",
+    ],
+  },
   { kind: "trainer-service" },
   { kind: "trainer-price" },
   { kind: "trainer-marketing" },
   { kind: "trainer-approach" },
   { kind: "trainer-review" },
   { kind: "divider", label: "Section 3", title: "個人オンラインレッスン・オンラインコンサルの現状分析" },
-  { kind: "online-target" },
-  { kind: "online-service" },
-  { kind: "online-price" },
+  {
+    kind: "bullets",
+    section: "online",
+    title: "ターゲット層：大人の初心者・再開組・独学層",
+    message: "ブランクと独学による「譜読みの遅さ」と「身体操作の不一致」が共通課題",
+    items: [
+      "メイン：18 歳以上の趣味の大人初心者、ブランクのある社会人層（やり直しピアノ）、独学者",
+      "ブランクで昔読めていた楽譜を読むのに時間がかかる",
+      "ヘ音記号・加線の多い音符・複雑な調号で頭が混乱する",
+      "両手で弾こうとすると楽譜の同時処理ができず手が止まる",
+      "手元（鍵盤）ばかり見てしまい、楽譜を見ながら弾けない（ブラインドタッチが不可）",
+    ],
+  },
+  {
+    kind: "table",
+    section: "online",
+    title: "サービス内容：オーダーメイド指導 × スキルシェア × 自習アプリ",
+    message: "統一カリキュラムは持たず、受講生の「弾きたい曲」起点で個別対応。アプリ群が並行利用される",
+    header: ["アプリ・ツール名", "料金プラン（税込）", "特徴・対応機能"],
+    rows: [
+      ["flowkey", "月額 2,100 円程度", "ヤマハ提携。1,500 曲以上、上級〜プロ対応"],
+      ["Simply Piano", "月額 1,633 円", "初心者向け、キーボード連動型ピアノ練習ゲーム"],
+      [
+        "NoteRacer",
+        "無料（Pro 800 円／年 3,000 円）",
+        "マイクで打鍵音を拾い、読譜速度を競うフラッシュカードゲーム",
+      ],
+      ["PlayScore2", "無料（一部有料）", "紙の楽譜を撮影してその場で自動演奏する高性能 OCR"],
+      ["譜読みトレーニング fuyotore", "980 円（買い切り）", "加線・調号・全 50 レベルの自動めくり機能"],
+      [
+        "洗足オンラインスクール",
+        "無料ソフトウェア提供",
+        "「クレ読み」「譜読みの女神」「楽典ウォーズ 3D」等",
+      ],
+    ],
+    colW: [3.2, 3.0, 5.83],
+    rowH: 0.48,
+    fontSize: 10,
+    note: {
+      text: "※ 自習用に「ブラインドタッチで弾けるおとなのための楽しいピアノスタディ」等の市販教材も併用される。",
+      style: TYPOGRAPHY.noteSmall,
+      gap: 0.20,
+    },
+  },
+  {
+    kind: "table",
+    section: "online",
+    title: "料金プラン：単発レッスン〜集中講座〜楽譜代行までの多段マネタイズ",
+    message: "1,000 円台の単発から 20 万円台の集中まで、価格と提供形態の幅が広い",
+    header: ["サービスカテゴリ", "料金相場（税込）", "提供内容・取引体系"],
+    rows: [
+      ["ストアカ 単発レッスン", "1,000〜2,000 円 / 30 分", "初心者向け体験、30 分で 1 曲弾く体験 等"],
+      [
+        "ストアカ 集中パッケージ",
+        "5,800 円（4 回）〜199,000 円（全 20 回）",
+        "短期集中型のカスタマイズピアノレッスン",
+      ],
+      [
+        "ココナラ 指番号書き込み代行",
+        "基本 3,500 円（参考動画・音源は各 +3,500 円）",
+        "楽譜 PDF に指番号・ペダリングを記入",
+      ],
+      [
+        "ココナラ 耳コピ・楽譜作成",
+        "3,000〜10,000 円程度",
+        "既存曲の採譜、難易度調整したオリジナルピアノ譜",
+      ],
+      [
+        "島村楽器オンライン 譜読み講座",
+        "A：14,300 円/月（月 4 回）／S：24,200 円/月（月 8 回）",
+        "入会金 13,200 円、大人向け楽譜の読み方・基本リズム講座",
+      ],
+    ],
+    colW: [3.5, 3.5, 5.03],
+    rowH: 0.62,
+    fontSize: 10,
+  },
   { kind: "online-marketing" },
   { kind: "online-approach" },
   { kind: "online-review" },
-  { kind: "matrix" },
+  {
+    kind: "table",
+    section: "matrix",
+    title: "競合分析比較マトリクス",
+    message: "強み・弱み・料金帯・メインターゲット・譜読みアプローチを 3 カテゴリで一覧化",
+    header: ["競合カテゴリ", "強み", "弱み", "料金帯（目安）", "メインターゲット", "「譜読み」へのアプローチ"],
+    rows: [
+      [
+        "大手音楽教室",
+        "全国的なブランド信頼／幼児期の聴く力育成",
+        "耳コピ依存で読譜が遅れる／オンライン対応力が弱い",
+        "入会金 5.5k〜11k／月謝 8.2k〜11.3k／管理費 220〜1,707 円",
+        "4〜5 歳の幼児・小学校低学年と保護者",
+        "「きく・うたう」優先後の確認プロセス。独立した体系性なし",
+      ],
+      [
+        "ピアノ講師育成",
+        "指導者の熱量とコミュニティ／視覚・聴覚統合の体系化",
+        "ライセンス維持コストが高額／大型紙教材で管理煩雑",
+        "サブスク 月 5,500 円／養成講座 7.2 万〜10.2 万／別売教材 1.3 万〜6.2 万",
+        "個人ピアノ教室主宰、幼児教育関係者、保育士",
+        "フラッシュカード・キャラクターでの直感理解。アナログ教具に依存",
+      ],
+      [
+        "個人オンライン講座",
+        "移動時間ゼロで低価格／弾きたい曲に合わせた柔軟性",
+        "音色ニュアンス・身体操作の指導に技術的限界／属人化",
+        "単発 1,000〜3,000 円／集中パック 5,800〜199,000 円／代行 3,500 円〜",
+        "趣味の大人初心者、再開組、独学層",
+        "ブラインドタッチ・模様読みを個別指導。決まった教材なし",
+      ],
+    ],
+    colW: [1.5, 2.0, 2.0, 2.3, 1.7, 2.53],
+    rowH: 1.20,
+    fontSize: 9,
+  },
   { kind: "divider", label: "Section 4", title: "結論：競合とバッティングしない差別化の方向性" },
   { kind: "conclusion-1" },
   { kind: "conclusion-2" },
@@ -216,22 +376,13 @@ slidesPlan.forEach((spec, idx) => {
       buildSectionDivider(slide, spec.label, spec.title);
       break;
 
-    // ===== 大手音楽教室 =====
-    case "yamaha-target":
-      addTitle(
-        slide,
-        "ターゲット層：幼児〜ジュニア層とその保護者",
-        "メインは 4〜5 歳の幼児期から小学校低学年。児童期に読譜の壁に直面する"
-      );
+    // 「タイトル + 全幅の箇条書きのみ」のスライド共通ハンドラ。
+    // spec: { kind: "bullets", section, title, message?, items: string[] }
+    case "bullets":
+      addTitle(slide, spec.title, spec.message);
       addBullets(
         slide,
-        [
-          "メインターゲット：4〜5 歳の幼児期〜小学校低学年のジュニア層、およびその保護者",
-          "幼児期は「楽しく歌って弾く」で満足できる",
-          "児童期に「曲が難しくなり、模倣や耳コピだけでは弾けなくなる」課題に直面",
-          "家で子どもが一人で譜読みできず、練習のたびに親子で多大なストレスを抱える",
-          "保護者は「子供の自立的な読譜力の欠如」に強い危機感を抱き始める",
-        ],
+        spec.items,
         SLIDE.marginX,
         SLIDE.contentY,
         CONTENT_W,
@@ -240,6 +391,42 @@ slidesPlan.forEach((spec, idx) => {
       );
       break;
 
+    // 「タイトル + 全幅のテーブル（任意で下に注記）」のスライド共通ハンドラ。
+    // spec: {
+    //   kind: "table", section, title, message?,
+    //   header: string[], rows: string[][],
+    //   colW: number[], rowH: number, fontSize?: number,
+    //   note?: { text: string, style?: TYPOGRAPHY.note*, gap?: number },
+    // }
+    case "table": {
+      addTitle(slide, spec.title, spec.message);
+      addTable(
+        slide,
+        spec.header,
+        spec.rows,
+        SLIDE.marginX,
+        SLIDE.contentY,
+        CONTENT_W,
+        { colW: spec.colW, rowH: spec.rowH, fontSize: spec.fontSize }
+      );
+      if (spec.note) {
+        const noteStyle = spec.note.style ?? TYPOGRAPHY.noteMedium;
+        const noteGap = spec.note.gap ?? 0.25;
+        const totalRows = spec.rows.length + 1; // header 行を含む
+        slide.addText(spec.note.text, {
+          x: SLIDE.marginX,
+          y: SLIDE.contentY + spec.rowH * totalRows + noteGap,
+          w: CONTENT_W,
+          h: 0.4,
+          fontFace: FONT.body,
+          fontSize: noteStyle.size,
+          color: COLORS.muted,
+        });
+      }
+      break;
+    }
+
+    // ===== 大手音楽教室 =====
     case "yamaha-service": {
       addTitle(
         slide,
@@ -282,50 +469,6 @@ slidesPlan.forEach((spec, idx) => {
       ]);
       break;
     }
-
-    case "yamaha-price":
-      addTitle(
-        slide,
-        "料金プラン：堅固な定額課金（サブスクリプション）モデル",
-        "入会金 + 月謝 + 運営管理費。半期ごとに数千円のオリジナル教材費が別途発生"
-      );
-      addTable(
-        slide,
-        ["教室・コース名", "入会金（税込）", "月謝（税込）", "運営管理費", "レッスン形態・回数"],
-        [
-          [
-            "ヤマハ音楽教室（幼児科等）",
-            "5,500〜11,000 円程度",
-            "8,250〜11,330 円程度",
-            "教室により別途発生",
-            "グループ／年 40 回／1 回 50 分",
-          ],
-          [
-            "カワイ 3 歳ソルフェージュ",
-            "11,000 円（標準）",
-            "8,800 円",
-            "月額 220 円程度",
-            "個人／月 3 回（年 36 回）／1 回 30 分",
-          ],
-        ],
-        SLIDE.marginX,
-        SLIDE.contentY,
-        CONTENT_W,
-        { colW: [3.5, 2.2, 2.2, 1.93, 2.2], rowH: 0.7 }
-      );
-      slide.addText(
-        "※ 別途、半期ごとに数千円のオリジナル教材費が発生する。",
-        {
-          x: SLIDE.marginX,
-          y: SLIDE.contentY + 0.7 * 3 + 0.25,
-          w: CONTENT_W,
-          h: 0.4,
-          fontFace: FONT.body,
-          fontSize: TYPOGRAPHY.noteMedium.size,
-          color: COLORS.muted,
-        }
-      );
-      break;
 
     case "yamaha-marketing":
       addTitle(
@@ -422,29 +565,6 @@ slidesPlan.forEach((spec, idx) => {
       break;
 
     // ===== 講師育成 =====
-    case "trainer-target":
-      addTitle(
-        slide,
-        "ターゲット層：個人ピアノ講師・幼児教育関係者",
-        "教室経営の孤独、教材研究の時間負担、初心者向け読譜指導ノウハウの欠如に悩む"
-      );
-      addBullets(
-        slide,
-        [
-          "メイン：個人ピアノ教室／音楽教室主宰の個人事業主、保育士・幼児教育関係者",
-          "幼児や初心者が退屈せずに読譜を学べる指導ノウハウがない",
-          "生徒が楽譜を読めず、宿題未実施、レッスン時間が譜読みに圧迫される",
-          "教材研究・準備・手作り教具にかかる時間がプライベートを圧迫",
-          "孤独な教室経営の中で、指導法・集客を相談できるプラットフォームがない",
-        ],
-        SLIDE.marginX,
-        SLIDE.contentY,
-        CONTENT_W,
-        SLIDE.contentH,
-        TYPOGRAPHY.slideBullet
-      );
-      break;
-
     case "trainer-service": {
       addTitle(
         slide,
@@ -612,112 +732,6 @@ slidesPlan.forEach((spec, idx) => {
       break;
 
     // ===== 個人オンライン =====
-    case "online-target":
-      addTitle(
-        slide,
-        "ターゲット層：大人の初心者・再開組・独学層",
-        "ブランクと独学による「譜読みの遅さ」と「身体操作の不一致」が共通課題"
-      );
-      addBullets(
-        slide,
-        [
-          "メイン：18 歳以上の趣味の大人初心者、ブランクのある社会人層（やり直しピアノ）、独学者",
-          "ブランクで昔読めていた楽譜を読むのに時間がかかる",
-          "ヘ音記号・加線の多い音符・複雑な調号で頭が混乱する",
-          "両手で弾こうとすると楽譜の同時処理ができず手が止まる",
-          "手元（鍵盤）ばかり見てしまい、楽譜を見ながら弾けない（ブラインドタッチが不可）",
-        ],
-        SLIDE.marginX,
-        SLIDE.contentY,
-        CONTENT_W,
-        SLIDE.contentH,
-        TYPOGRAPHY.slideBullet
-      );
-      break;
-
-    case "online-service":
-      addTitle(
-        slide,
-        "サービス内容：オーダーメイド指導 × スキルシェア × 自習アプリ",
-        "統一カリキュラムは持たず、受講生の「弾きたい曲」起点で個別対応。アプリ群が並行利用される"
-      );
-      addTable(
-        slide,
-        ["アプリ・ツール名", "料金プラン（税込）", "特徴・対応機能"],
-        [
-          ["flowkey", "月額 2,100 円程度", "ヤマハ提携。1,500 曲以上、上級〜プロ対応"],
-          ["Simply Piano", "月額 1,633 円", "初心者向け、キーボード連動型ピアノ練習ゲーム"],
-          [
-            "NoteRacer",
-            "無料（Pro 800 円／年 3,000 円）",
-            "マイクで打鍵音を拾い、読譜速度を競うフラッシュカードゲーム",
-          ],
-          ["PlayScore2", "無料（一部有料）", "紙の楽譜を撮影してその場で自動演奏する高性能 OCR"],
-          ["譜読みトレーニング fuyotore", "980 円（買い切り）", "加線・調号・全 50 レベルの自動めくり機能"],
-          [
-            "洗足オンラインスクール",
-            "無料ソフトウェア提供",
-            "「クレ読み」「譜読みの女神」「楽典ウォーズ 3D」等",
-          ],
-        ],
-        SLIDE.marginX,
-        SLIDE.contentY,
-        CONTENT_W,
-        { colW: [3.2, 3.0, 5.83], rowH: 0.48, fontSize: 10 }
-      );
-      slide.addText(
-        "※ 自習用に「ブラインドタッチで弾けるおとなのための楽しいピアノスタディ」等の市販教材も併用される。",
-        {
-          x: SLIDE.marginX,
-          y: SLIDE.contentY + 0.48 * 7 + 0.20,
-          w: CONTENT_W,
-          h: 0.4,
-          fontFace: FONT.body,
-          fontSize: TYPOGRAPHY.noteSmall.size,
-          color: COLORS.muted,
-        }
-      );
-      break;
-
-    case "online-price":
-      addTitle(
-        slide,
-        "料金プラン：単発レッスン〜集中講座〜楽譜代行までの多段マネタイズ",
-        "1,000 円台の単発から 20 万円台の集中まで、価格と提供形態の幅が広い"
-      );
-      addTable(
-        slide,
-        ["サービスカテゴリ", "料金相場（税込）", "提供内容・取引体系"],
-        [
-          ["ストアカ 単発レッスン", "1,000〜2,000 円 / 30 分", "初心者向け体験、30 分で 1 曲弾く体験 等"],
-          [
-            "ストアカ 集中パッケージ",
-            "5,800 円（4 回）〜199,000 円（全 20 回）",
-            "短期集中型のカスタマイズピアノレッスン",
-          ],
-          [
-            "ココナラ 指番号書き込み代行",
-            "基本 3,500 円（参考動画・音源は各 +3,500 円）",
-            "楽譜 PDF に指番号・ペダリングを記入",
-          ],
-          [
-            "ココナラ 耳コピ・楽譜作成",
-            "3,000〜10,000 円程度",
-            "既存曲の採譜、難易度調整したオリジナルピアノ譜",
-          ],
-          [
-            "島村楽器オンライン 譜読み講座",
-            "A：14,300 円/月（月 4 回）／S：24,200 円/月（月 8 回）",
-            "入会金 13,200 円、大人向け楽譜の読み方・基本リズム講座",
-          ],
-        ],
-        SLIDE.marginX,
-        SLIDE.contentY,
-        CONTENT_W,
-        { colW: [3.5, 3.5, 5.03], rowH: 0.62, fontSize: 10 }
-      );
-      break;
-
     case "online-marketing":
       addTitle(
         slide,
@@ -801,48 +815,6 @@ slidesPlan.forEach((spec, idx) => {
           opts: CARD_VARIANTS.neg,
         },
       ]);
-      break;
-
-    case "matrix":
-      addTitle(
-        slide,
-        "競合分析比較マトリクス",
-        "強み・弱み・料金帯・メインターゲット・譜読みアプローチを 3 カテゴリで一覧化"
-      );
-      addTable(
-        slide,
-        ["競合カテゴリ", "強み", "弱み", "料金帯（目安）", "メインターゲット", "「譜読み」へのアプローチ"],
-        [
-          [
-            "大手音楽教室",
-            "全国的なブランド信頼／幼児期の聴く力育成",
-            "耳コピ依存で読譜が遅れる／オンライン対応力が弱い",
-            "入会金 5.5k〜11k／月謝 8.2k〜11.3k／管理費 220〜1,707 円",
-            "4〜5 歳の幼児・小学校低学年と保護者",
-            "「きく・うたう」優先後の確認プロセス。独立した体系性なし",
-          ],
-          [
-            "ピアノ講師育成",
-            "指導者の熱量とコミュニティ／視覚・聴覚統合の体系化",
-            "ライセンス維持コストが高額／大型紙教材で管理煩雑",
-            "サブスク 月 5,500 円／養成講座 7.2 万〜10.2 万／別売教材 1.3 万〜6.2 万",
-            "個人ピアノ教室主宰、幼児教育関係者、保育士",
-            "フラッシュカード・キャラクターでの直感理解。アナログ教具に依存",
-          ],
-          [
-            "個人オンライン講座",
-            "移動時間ゼロで低価格／弾きたい曲に合わせた柔軟性",
-            "音色ニュアンス・身体操作の指導に技術的限界／属人化",
-            "単発 1,000〜3,000 円／集中パック 5,800〜199,000 円／代行 3,500 円〜",
-            "趣味の大人初心者、再開組、独学層",
-            "ブラインドタッチ・模様読みを個別指導。決まった教材なし",
-          ],
-        ],
-        SLIDE.marginX,
-        SLIDE.contentY,
-        CONTENT_W,
-        { colW: [1.5, 2.0, 2.0, 2.3, 1.7, 2.53], rowH: 1.20, fontSize: 9 }
-      );
       break;
 
     // ===== 結論 =====
@@ -981,7 +953,7 @@ slidesPlan.forEach((spec, idx) => {
       });
   }
 
-  const section = sectionOf(spec.kind);
+  const section = sectionOf(spec);
   if (section !== null) {
     addFooter(slide, page, TOTAL, section);
   }
