@@ -1,0 +1,15 @@
+# OS
+.DS_Store
+
+# Office temporary lock files
+~$*
+
+# Node
+node_modules/
+
+# Local backups
+bk-claude/
+
+# PowerPoint files
+*.ppt
+*.pptx
