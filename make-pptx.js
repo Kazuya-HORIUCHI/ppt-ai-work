@@ -31,7 +31,7 @@ const SLIDE = {
   marginX: 0.65,
   titleY: 0.45,
   titleH: 0.60,
-  accentLineY: 1.08,
+  accentLineY: 1.06,
   accentLineH: 0.04,
   messageY: 1.40,
   messageH: 0.55,
@@ -43,21 +43,47 @@ const SLIDE = {
 
 const CONTENT_W = SLIDE.width - SLIDE.marginX * 2;
 
-// カード／ボックスの内側余白・本文高さ推定パラメータ
+// カード／ボックスの内側余白・本文高さ推定パラメータ（幾何のみ）
 const CARD = {
   padTop: 0.22,
   padBottom: 0.34,
   padSide: 0.18,
   titleH: 0.28,
-  titleFontSize: 13,
   titleBodyGap: 0.10,
-  bodyFontSize: 12,
-  bulletLineSpacing: 1.25,
-  bodyLineSpacing: 1.3,
-  bulletParaSpaceAfterPt: 8,
   bulletIndentIn: 0.30,
   charWMultiplier: 1.1,
   heightSafety: 1.05,
+};
+
+// 全テキスト要素のフォントサイズ・太さ・行送り・段落間隔を一元管理する。
+// size は pt、lineSpacing は倍率、paraSpaceAfterPt は pt 単位。
+const TYPOGRAPHY = {
+  // 各スライド上部
+  slideTitle:         { size: 23, bold: true },
+  slideMessage:       { size: 15, bold: true },
+  // フッター
+  footer:             { size: 9 },
+  // スライドに直貼りする箇条書き（カードに入らない場合）
+  slideBullet:        { size: 14, lineSpacing: 1.25, paraSpaceAfterPt: 8 },
+  // カード内
+  cardTitle:          { size: 13, bold: true },
+  cardBody:           { size: 12, lineSpacing: 1.3 },
+  cardBullet:         { size: 12, lineSpacing: 1.25, paraSpaceAfterPt: 8 },
+  // 表
+  tableBody:          { size: 11 },
+  // タイトルスライド
+  titleSlideEyebrow:  { size: 16, bold: true },
+  titleSlideHeading:  { size: 36, bold: true, lineSpacing: 1.2 },
+  titleSlideSubtitle: { size: 14 },
+  titleSlideMeta:     { size: 10 },
+  // セクション区切り
+  dividerLabel:       { size: 18, bold: true },
+  dividerTitle:       { size: 32, bold: true, lineSpacing: 1.2 },
+  // 補足注記（※ 行）
+  noteSmall:          { size: 10 },
+  noteMedium:         { size: 11 },
+  // 未実装プレースホルダ
+  todo:               { size: 18 },
 };
 
 // 1 文字の表示幅を「全角換算」で返す（全角=1.0, 半角=0.5）。
@@ -79,8 +105,8 @@ function visualCharWidth(text) {
 }
 
 function estimateBodyHeight(body, innerW) {
-  const fontSize = CARD.bodyFontSize;
-  const charWIn = (fontSize / 72) * CARD.charWMultiplier;
+  const style = Array.isArray(body) ? TYPOGRAPHY.cardBullet : TYPOGRAPHY.cardBody;
+  const charWIn = (style.size / 72) * CARD.charWMultiplier;
   if (Array.isArray(body)) {
     const usableW = Math.max(0.5, innerW - CARD.bulletIndentIn);
     const charsPerLine = Math.max(1, Math.floor(usableW / charWIn));
@@ -89,14 +115,14 @@ function estimateBodyHeight(body, innerW) {
       const v = visualCharWidth(text);
       totalLines += Math.max(1, Math.ceil(v / charsPerLine));
     }
-    const lineH = (fontSize / 72) * CARD.bulletLineSpacing;
-    const paraSpace = (CARD.bulletParaSpaceAfterPt / 72) * body.length;
+    const lineH = (style.size / 72) * style.lineSpacing;
+    const paraSpace = (style.paraSpaceAfterPt / 72) * body.length;
     return (totalLines * lineH + paraSpace) * CARD.heightSafety;
   }
   const charsPerLine = Math.max(1, Math.floor(innerW / charWIn));
   const v = visualCharWidth(body);
   const lines = Math.max(1, Math.ceil(v / charsPerLine));
-  const lineH = (fontSize / 72) * CARD.bodyLineSpacing;
+  const lineH = (style.size / 72) * style.lineSpacing;
   return lines * lineH * CARD.heightSafety;
 }
 
@@ -106,17 +132,7 @@ function cardHeight(title, body, w) {
   return CARD.padTop + CARD.titleH + CARD.titleBodyGap + bodyH + CARD.padBottom;
 }
 
-// 与えられたテキストの表示幅を推定する。
-// bold はわずかに字幅が広くなるので追加係数で補正。
-function estimateTextWidth(text, fontSize, opts = {}) {
-  const boldFactor = opts.bold ? 1.05 : 1.0;
-  const charWIn = (fontSize / 72) * CARD.charWMultiplier * boldFactor;
-  return visualCharWidth(text) * charWIn;
-}
-
 // ---------- 共通コンポーネント ----------
-const TITLE_FONT_SIZE = 22;
-
 function addTitle(slide, title, message) {
   slide.addText(title, {
     x: SLIDE.marginX,
@@ -124,8 +140,8 @@ function addTitle(slide, title, message) {
     w: CONTENT_W,
     h: SLIDE.titleH,
     fontFace: FONT.body,
-    fontSize: TITLE_FONT_SIZE,
-    bold: true,
+    fontSize: TYPOGRAPHY.slideTitle.size,
+    bold: TYPOGRAPHY.slideTitle.bold,
     color: COLORS.text,
     valign: "middle",
   });
@@ -134,7 +150,7 @@ function addTitle(slide, title, message) {
   // 実測でわずかに短くなるため、ACCENT_LINE_W_FACTOR で微補正する。
   const ACCENT_LINE_W_FACTOR = 1.04;
   const accentLineW = Math.min(
-    visualCharWidth(title) * (TITLE_FONT_SIZE / 72) * ACCENT_LINE_W_FACTOR,
+    visualCharWidth(title) * (TYPOGRAPHY.slideTitle.size / 72) * ACCENT_LINE_W_FACTOR,
     CONTENT_W
   );
   slide.addShape(pptx.ShapeType.rect, {
@@ -152,9 +168,9 @@ function addTitle(slide, title, message) {
       w: CONTENT_W,
       h: SLIDE.messageH,
       fontFace: FONT.body,
-      fontSize: 13,
+      fontSize: TYPOGRAPHY.slideMessage.size,
       color: COLORS.accent,
-      bold: true,
+      bold: TYPOGRAPHY.slideMessage.bold,
       valign: "top",
     });
   }
@@ -168,7 +184,7 @@ function addFooter(slide, pageNumber, totalPages, sectionLabel) {
       w: CONTENT_W * 0.7,
       h: SLIDE.footerH,
       fontFace: FONT.body,
-      fontSize: 9,
+      fontSize: TYPOGRAPHY.footer.size,
       color: COLORS.muted,
     });
   }
@@ -178,17 +194,21 @@ function addFooter(slide, pageNumber, totalPages, sectionLabel) {
     w: 1.5,
     h: SLIDE.footerH,
     fontFace: FONT.body,
-    fontSize: 9,
+    fontSize: TYPOGRAPHY.footer.size,
     color: COLORS.muted,
     align: "right",
   });
 }
 
-function addBullets(slide, items, x, y, w, h, opts = {}) {
-  const fontSize = opts.fontSize || 13;
+// style は TYPOGRAPHY.cardBullet / TYPOGRAPHY.slideBullet 等のスタイル定義オブジェクト。
+function addBullets(slide, items, x, y, w, h, style) {
   const arr = items.map((t) => ({
     text: t,
-    options: { bullet: { code: "25A0" }, paraSpaceAfter: 8, indent: 0 },
+    options: {
+      bullet: { code: "25C6" },
+      paraSpaceAfter: style.paraSpaceAfterPt,
+      indent: 0,
+    },
   }));
   slide.addText(arr, {
     x,
@@ -196,10 +216,10 @@ function addBullets(slide, items, x, y, w, h, opts = {}) {
     w,
     h,
     fontFace: FONT.body,
-    fontSize,
+    fontSize: style.size,
     color: COLORS.text,
     valign: "top",
-    lineSpacingMultiple: 1.25,
+    lineSpacingMultiple: style.lineSpacing,
   });
 }
 
@@ -224,17 +244,15 @@ function addCard(slide, x, y, w, h, title, body, opts = {}) {
     w: innerW,
     h: CARD.titleH,
     fontFace: FONT.body,
-    fontSize: CARD.titleFontSize,
-    bold: true,
+    fontSize: TYPOGRAPHY.cardTitle.size,
+    bold: TYPOGRAPHY.cardTitle.bold,
     color: titleColor,
     valign: "top",
   });
   const bodyY = y + CARD.padTop + CARD.titleH + CARD.titleBodyGap;
   const bodyMaxH = Math.max(0.1, y + h - CARD.padBottom - bodyY);
   if (Array.isArray(body)) {
-    addBullets(slide, body, innerX, bodyY, innerW, bodyMaxH, {
-      fontSize: CARD.bodyFontSize,
-    });
+    addBullets(slide, body, innerX, bodyY, innerW, bodyMaxH, TYPOGRAPHY.cardBullet);
   } else {
     slide.addText(body, {
       x: innerX,
@@ -242,10 +260,10 @@ function addCard(slide, x, y, w, h, title, body, opts = {}) {
       w: innerW,
       h: bodyMaxH,
       fontFace: FONT.body,
-      fontSize: CARD.bodyFontSize,
+      fontSize: TYPOGRAPHY.cardBody.size,
       color: COLORS.text,
       valign: "top",
-      lineSpacingMultiple: CARD.bodyLineSpacing,
+      lineSpacingMultiple: TYPOGRAPHY.cardBody.lineSpacing,
     });
   }
 }
@@ -262,7 +280,7 @@ function addCardRow(slide, y, cards) {
 }
 
 function addTable(slide, header, rows, x, y, w, opts = {}) {
-  const fontSize = opts.fontSize || 11;
+  const fontSize = opts.fontSize || TYPOGRAPHY.tableBody.size;
   const headerRow = header.map((cell) => ({
     text: cell,
     options: {
@@ -315,9 +333,9 @@ function buildTitleSlide(slide) {
     w: 11.5,
     h: 0.6,
     fontFace: FONT.body,
-    fontSize: 16,
+    fontSize: TYPOGRAPHY.titleSlideEyebrow.size,
     color: COLORS.accent,
-    bold: true,
+    bold: TYPOGRAPHY.titleSlideEyebrow.bold,
   });
   slide.addText("譜読み・ソルフェージュ特化型\nオンライン事業の市場参入", {
     x: 0.9,
@@ -325,10 +343,10 @@ function buildTitleSlide(slide) {
     w: 11.5,
     h: 2.2,
     fontFace: FONT.body,
-    fontSize: 36,
+    fontSize: TYPOGRAPHY.titleSlideHeading.size,
     color: COLORS.text,
-    bold: true,
-    lineSpacingMultiple: 1.2,
+    bold: TYPOGRAPHY.titleSlideHeading.bold,
+    lineSpacingMultiple: TYPOGRAPHY.titleSlideHeading.lineSpacing,
   });
   slide.addShape(pptx.ShapeType.rect, {
     x: 0.9,
@@ -346,7 +364,7 @@ function buildTitleSlide(slide) {
       w: 11.5,
       h: 0.5,
       fontFace: FONT.body,
-      fontSize: 14,
+      fontSize: TYPOGRAPHY.titleSlideSubtitle.size,
       color: COLORS.subText,
     }
   );
@@ -356,7 +374,7 @@ function buildTitleSlide(slide) {
     w: 11.5,
     h: 0.3,
     fontFace: FONT.body,
-    fontSize: 10,
+    fontSize: TYPOGRAPHY.titleSlideMeta.size,
     color: COLORS.muted,
   });
 }
@@ -365,12 +383,12 @@ function buildSectionDivider(slide, label, title, pageNumber, totalPages) {
   slide.background = { color: COLORS.bgSubtle };
   slide.addText(label, {
     x: SLIDE.marginX,
-    y: 2.6,
+    y: 2.3,
     w: CONTENT_W,
     h: 0.45,
     fontFace: FONT.body,
-    fontSize: 14,
-    bold: true,
+    fontSize: TYPOGRAPHY.dividerLabel.size,
+    bold: TYPOGRAPHY.dividerLabel.bold,
     color: COLORS.accent,
     align: "center",
   });
@@ -380,19 +398,11 @@ function buildSectionDivider(slide, label, title, pageNumber, totalPages) {
     w: CONTENT_W,
     h: 1.6,
     fontFace: FONT.body,
-    fontSize: 30,
-    bold: true,
+    fontSize: TYPOGRAPHY.dividerTitle.size,
+    bold: TYPOGRAPHY.dividerTitle.bold,
     color: COLORS.text,
     align: "center",
-    lineSpacingMultiple: 1.2,
-  });
-  slide.addShape(pptx.ShapeType.rect, {
-    x: SLIDE.width / 2 - 0.5,
-    y: 4.85,
-    w: 1.0,
-    h: 0.05,
-    fill: { color: COLORS.accent },
-    line: { type: "none" },
+    lineSpacingMultiple: TYPOGRAPHY.dividerTitle.lineSpacing,
   });
   addFooter(slide, pageNumber, totalPages, "");
 }
@@ -546,7 +556,7 @@ slidesPlan.forEach((spec, idx) => {
         SLIDE.contentY,
         CONTENT_W,
         SLIDE.contentH,
-        { fontSize: 14 }
+        TYPOGRAPHY.slideBullet
       );
       addFooter(slide, page, TOTAL, sectionLabels.yamaha);
       break;
@@ -637,7 +647,7 @@ slidesPlan.forEach((spec, idx) => {
           w: CONTENT_W,
           h: 0.4,
           fontFace: FONT.body,
-          fontSize: 11,
+          fontSize: TYPOGRAPHY.noteMedium.size,
           color: COLORS.muted,
         }
       );
@@ -769,7 +779,7 @@ slidesPlan.forEach((spec, idx) => {
         SLIDE.contentY,
         CONTENT_W,
         SLIDE.contentH,
-        { fontSize: 14 }
+        TYPOGRAPHY.slideBullet
       );
       addFooter(slide, page, TOTAL, sectionLabels.trainer);
       break;
@@ -985,7 +995,7 @@ slidesPlan.forEach((spec, idx) => {
         SLIDE.contentY,
         CONTENT_W,
         SLIDE.contentH,
-        { fontSize: 14 }
+        TYPOGRAPHY.slideBullet
       );
       addFooter(slide, page, TOTAL, sectionLabels.online);
       break;
@@ -1028,7 +1038,7 @@ slidesPlan.forEach((spec, idx) => {
           w: CONTENT_W,
           h: 0.4,
           fontFace: FONT.body,
-          fontSize: 10,
+          fontSize: TYPOGRAPHY.noteSmall.size,
           color: COLORS.muted,
         }
       );
@@ -1365,7 +1375,7 @@ slidesPlan.forEach((spec, idx) => {
         w: 11,
         h: 1,
         fontFace: FONT.body,
-        fontSize: 18,
+        fontSize: TYPOGRAPHY.todo.size,
         color: COLORS.negBorder,
       });
       addFooter(slide, page, TOTAL, "要確認");

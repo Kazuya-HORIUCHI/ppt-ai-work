@@ -139,15 +139,15 @@ Y 座標はすべてここで固定し、個別スライドで上書きしない
     addFooter(slide, pageNumber, totalPages, sectionLabel)
     addCard(slide, x, y, w, h, title, body, opts?)
     addCardRow(slide, y, cards)
-    addBullets(slide, items, x, y, w, h, opts?)
+    addBullets(slide, items, x, y, w, h, style)
     addTable(slide, header, rows, x, y, w, opts?)
     cardHeight(title, body, w)
     estimateBodyHeight(body, innerW)
-    estimateTextWidth(text, fontSize, opts?)
     visualCharWidth(text)
 
 - addTitle は内部で SLIDE.titleY / titleH / accentLineY / messageY を参照する。呼び出し側から Y 座標を渡さない。
 - addCardRow は同一行に並べるカード群を受け取り、各カードの「必要高さ」の最大値で高さを揃えて配置する。配置した行の高さを戻り値で返し、次行の Y 起点に使う。
+- addBullets の `style` 引数には `TYPOGRAPHY.slideBullet` / `TYPOGRAPHY.cardBullet` などのスタイル定義オブジェクトを渡す。`fontSize` 単独のリテラルは渡さない。
 - セクション識別は addFooter の sectionLabel 引数で渡し、上部ラベル用の関数は作らない。
 
 ## スライド構造
@@ -180,25 +180,49 @@ Y 座標はすべてここで固定し、個別スライドで上書きしない
   - 左右: 0.18 in
 - 上下余白は意図して非対称にしてよい（下を厚く取り視覚的な重心を上に寄せる用途）。ただし内容量の多寡に応じて動的に変更することは禁止
 
-### 標準フォントサイズ
+### タイポグラフィ（必須）
 
-カード／ボックス内テキストの既定サイズは以下とする。
+スライド上の全テキスト要素のフォントサイズ、太さ、行送り、段落間隔は `TYPOGRAPHY` 定数に一元集約する。`addTitle` / `addFooter` / `addCard` / `addBullets` / `addTable` 等の共通関数および各スライドケースは、`TYPOGRAPHY` 経由でスタイルを参照する。各所に `fontSize: 14` のようなマジックナンバーを散らさない。
 
-- カードタイトル: 13 pt（太字、`accent` 色）
-- 本文・箇条書き: 12 pt
-- カード外の補足注記（`※` 行など）: 10〜11 pt
+スタイル定義の要素:
 
-本文サイズを変える場合は、本文コンテンツ実寸の見積もり（行高・1 文字幅・段落間隔）も同じサイズで計算し直すこと。
+- size（pt）
+- bold（必要な要素のみ true）
+- lineSpacing（行送り倍率。本文／タイトルスライド大見出し／区切り大見出しで使用）
+- paraSpaceAfterPt（段落間スペース pt。箇条書きで使用）
+
+既定スタイル一覧（指定がない場合）:
+
+| キー | size | bold | lineSpacing | paraSpaceAfterPt | 用途 |
+|---|---|---|---|---|---|
+| slideTitle | 23 | true | — | — | 各スライドのタイトル |
+| slideMessage | 13 | true | — | — | タイトル下のキーメッセージ |
+| footer | 9 | — | — | — | フッター |
+| slideBullet | 14 | — | 1.25 | 8 | スライド直貼りの箇条書き |
+| cardTitle | 13 | true | — | — | カード内のタイトル |
+| cardBody | 12 | — | 1.30 | — | カード内のプレーン本文 |
+| cardBullet | 12 | — | 1.25 | 8 | カード内の箇条書き |
+| tableBody | 11 | — | — | — | 表セルの既定 |
+| titleSlideEyebrow | 16 | true | — | — | タイトルスライドの肩テキスト |
+| titleSlideHeading | 36 | true | 1.20 | — | タイトルスライドの大見出し |
+| titleSlideSubtitle | 14 | — | — | — | タイトルスライドのサブタイトル |
+| titleSlideMeta | 10 | — | — | — | タイトルスライドの日付など |
+| dividerLabel | 18 | true | — | — | セクション区切りの "Section N" |
+| dividerTitle | 32 | true | 1.20 | — | セクション区切りの大見出し |
+| noteSmall | 10 | — | — | — | 補足注記（小） |
+| noteMedium | 11 | — | — | — | 補足注記（中） |
+| todo | 18 | — | — | — | 未実装プレースホルダ |
+
+`tableBody.size` は `addTable` の既定値として参照する。カラム数が多くて 11 pt では収まらないスライドは、`addTable` の `opts.fontSize` で個別に小さく上書きしてよい。
+
+`cardBullet` / `cardBody` の `size` / `lineSpacing` / `paraSpaceAfterPt` を変える場合は、`estimateBodyHeight` が同じスタイル定義を参照するため、本文コンテンツ実寸の見積もりは自動的に追随する。
 
 ### カード描画パラメータ（既定値）
 
-`addCard` / `addCardRow` / `cardHeight` が参照する既定値。指定がない限り以下を使う。
+`addCard` / `addCardRow` / `cardHeight` が参照する**幾何**の既定値。指定がない限り以下を使う。フォント関連は `TYPOGRAPHY` を参照。
 
 - titleH（タイトルテキストの占有高さ）: 0.28 in
 - titleBodyGap（タイトル下端から本文上端までの間隔）: 0.10 in
-- bulletLineSpacing（箇条書きの行送り倍率）: 1.25
-- bodyLineSpacing（本文プレーンテキストの行送り倍率）: 1.30
-- bulletParaSpaceAfterPt（箇条書き段落間の追加スペース）: 8 pt
 - bulletIndentIn（バレット位置からテキスト開始までの推定インデント）: 0.30 in
 - charWMultiplier（1 文字幅の補正係数。Yu Gothic 実測との差を埋めるため `fontSize/72` に乗じる）: 1.10
 - heightSafety（高さ推定の安全マージン）: 1.05
