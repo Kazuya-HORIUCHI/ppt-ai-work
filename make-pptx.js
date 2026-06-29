@@ -43,6 +43,21 @@ const SLIDE = {
 
 const CONTENT_W = SLIDE.width - SLIDE.marginX * 2;
 
+// 標準的な2カード左右レイアウトの寸法（contentY 起点、各カードの高さは内容に応じて算出）
+const TWO_COL = {
+  leftX: SLIDE.marginX,
+  rightX: SLIDE.marginX + (CONTENT_W - 0.30) / 2 + 0.30,
+  colW: (CONTENT_W - 0.30) / 2,
+  y: SLIDE.contentY,
+};
+
+// カードの配色プリセット（addCard の opts に渡す）
+const CARD_VARIANTS = {
+  neg:    { fillColor: COLORS.negBg,       borderColor: COLORS.negBorder, titleColor: COLORS.negBorder },
+  pos:    { fillColor: COLORS.posBg,       borderColor: COLORS.posBorder, titleColor: COLORS.posBorder },
+  accent: { fillColor: COLORS.accentLight, borderColor: COLORS.accent,    titleColor: COLORS.accent    },
+};
+
 // カード／ボックスの内側余白・本文高さ推定パラメータ（幾何のみ）
 const CARD = {
   padTop: 0.22,
@@ -279,6 +294,19 @@ function addCardRow(slide, y, cards) {
   return rowH;
 }
 
+// TWO_COL の左右に2枚のカードを配置する糖衣構文。cards = [left, right]。
+function addTwoColRow(slide, y, cards) {
+  return addCardRow(
+    slide,
+    y,
+    cards.map((c, i) => ({
+      x: i === 0 ? TWO_COL.leftX : TWO_COL.rightX,
+      w: TWO_COL.colW,
+      ...c,
+    }))
+  );
+}
+
 function addTable(slide, header, rows, x, y, w, opts = {}) {
   const fontSize = opts.fontSize || TYPOGRAPHY.tableBody.size;
   const headerRow = header.map((cell) => ({
@@ -379,7 +407,7 @@ function buildTitleSlide(slide) {
   });
 }
 
-function buildSectionDivider(slide, label, title, pageNumber, totalPages) {
+function buildSectionDivider(slide, label, title) {
   slide.background = { color: COLORS.bgSubtle };
   slide.addText(label, {
     x: SLIDE.marginX,
@@ -404,7 +432,6 @@ function buildSectionDivider(slide, label, title, pageNumber, totalPages) {
     align: "center",
     lineSpacingMultiple: TYPOGRAPHY.dividerTitle.lineSpacing,
   });
-  addFooter(slide, pageNumber, totalPages, "");
 }
 
 // ---------- スライド生成 ----------
@@ -416,6 +443,15 @@ const sectionLabels = {
   matrix: "競合分析｜比較マトリクス",
   conclusion: "結論｜差別化戦略",
 };
+
+// spec.kind からフッターに表示するセクションラベルを解決する。
+// null を返した場合はフッター自体を描画しない（タイトルスライド等）。
+function sectionOf(kind) {
+  if (kind === "title") return null;
+  if (kind === "divider") return "";
+  const key = kind.split("-")[0];
+  return sectionLabels[key] ?? "要確認";
+}
 
 const slidesPlan = [
   { kind: "title" },
@@ -454,14 +490,6 @@ const TOTAL = slidesPlan.length;
 function pageOf(idx) {
   return idx + 1;
 }
-
-// 標準的な2カード左右レイアウトの寸法（contentY 起点、各カードの高さは内容に応じて算出）
-const TWO_COL = {
-  leftX: SLIDE.marginX,
-  rightX: SLIDE.marginX + (CONTENT_W - 0.30) / 2 + 0.30,
-  colW: (CONTENT_W - 0.30) / 2,
-  y: SLIDE.contentY,
-};
 
 slidesPlan.forEach((spec, idx) => {
   const slide = pptx.addSlide();
@@ -525,15 +553,14 @@ slidesPlan.forEach((spec, idx) => {
             "音の遅延・音色変化の影響を受けない領域 → オンラインの弱点が無効化される",
             "画面共有・動画・アプリで「知的認識・認知操作」を体系化すれば競合と物理的に衝突しない",
           ],
-          opts: { fillColor: COLORS.accentLight, borderColor: COLORS.accent, titleColor: COLORS.accent },
+          opts: CARD_VARIANTS.accent,
         },
       ]);
-      addFooter(slide, page, TOTAL, sectionLabels.intro);
       break;
     }
 
     case "divider":
-      buildSectionDivider(slide, spec.label, spec.title, page, TOTAL);
+      buildSectionDivider(slide, spec.label, spec.title);
       break;
 
     // ===== 大手音楽教室 =====
@@ -558,7 +585,6 @@ slidesPlan.forEach((spec, idx) => {
         SLIDE.contentH,
         TYPOGRAPHY.slideBullet
       );
-      addFooter(slide, page, TOTAL, sectionLabels.yamaha);
       break;
 
     case "yamaha-service": {
@@ -568,10 +594,8 @@ slidesPlan.forEach((spec, idx) => {
         "ヤマハは「きく→うたう→ひく→よむ→つくる」の体系、カワイは個人レッスン型ソルフェージュ入門"
       );
       const gap = 0.15;
-      const row1H = addCardRow(slide, SLIDE.contentY, [
+      const row1H = addTwoColRow(slide, SLIDE.contentY, [
         {
-          x: TWO_COL.leftX,
-          w: TWO_COL.colW,
           title: "ヤマハ",
           body: [
             "「きく→うたう→ひく→よむ→つくる」の体系プロセス",
@@ -583,8 +607,6 @@ slidesPlan.forEach((spec, idx) => {
           ],
         },
         {
-          x: TWO_COL.rightX,
-          w: TWO_COL.colW,
           title: "カワイ",
           body: [
             "「3 歳ソルフェージュ」など個人レッスン形式の入門コース",
@@ -605,7 +627,6 @@ slidesPlan.forEach((spec, idx) => {
           body: "タッチの違い（軽快 vs 重厚）は、将来生ピアノで演奏する学習者にとって適応上の課題を生じさせる要因となる。",
         },
       ]);
-      addFooter(slide, page, TOTAL, sectionLabels.yamaha);
       break;
     }
 
@@ -651,7 +672,6 @@ slidesPlan.forEach((spec, idx) => {
           color: COLORS.muted,
         }
       );
-      addFooter(slide, page, TOTAL, sectionLabels.yamaha);
       break;
 
     case "yamaha-marketing":
@@ -660,10 +680,8 @@ slidesPlan.forEach((spec, idx) => {
         "マーケティング・集客：全国規模の認知獲得と体験フック",
         "全国 TV CM・自社 HP・折込チラシ・看板で広く認知。無料体験／3 ヶ月トライアルで心理的ハードルを下げる"
       );
-      addCardRow(slide, TWO_COL.y, [
+      addTwoColRow(slide, TWO_COL.y, [
         {
-          x: TWO_COL.leftX,
-          w: TWO_COL.colW,
           title: "主要な集客チャネル",
           body: [
             "全国規模のテレビ CM",
@@ -673,8 +691,6 @@ slidesPlan.forEach((spec, idx) => {
           ],
         },
         {
-          x: TWO_COL.rightX,
-          w: TWO_COL.colW,
           title: "受講生を引きつけるフック",
           body: [
             "無料体験レッスンの常時実施",
@@ -684,7 +700,6 @@ slidesPlan.forEach((spec, idx) => {
           ],
         },
       ]);
-      addFooter(slide, page, TOTAL, sectionLabels.yamaha);
       break;
 
     case "yamaha-approach": {
@@ -717,10 +732,9 @@ slidesPlan.forEach((spec, idx) => {
             "譜読みをそれ自体で独立した技術として論理的に教えることはしない",
             "音感を育てるための「確認ツール」としての補助的な扱いに留まる",
           ],
-          opts: { fillColor: COLORS.accentLight, borderColor: COLORS.accent, titleColor: COLORS.accent },
+          opts: CARD_VARIANTS.accent,
         },
       ]);
-      addFooter(slide, page, TOTAL, sectionLabels.yamaha);
       break;
     }
 
@@ -730,10 +744,8 @@ slidesPlan.forEach((spec, idx) => {
         "ユーザー評判：高い音感の獲得と「譜読み難民」の発生",
         "音感面の評価は高いが、出身者特有の「楽譜を読まずに弾いてしまう」深刻なギャップが残る"
       );
-      addCardRow(slide, TWO_COL.y, [
+      addTwoColRow(slide, TWO_COL.y, [
         {
-          x: TWO_COL.leftX,
-          w: TWO_COL.colW,
           title: "ポジティブな評価",
           body: [
             "耳が非常に良くなり、聴いた音をすぐにドレミで歌える",
@@ -741,11 +753,9 @@ slidesPlan.forEach((spec, idx) => {
             "音楽表現が豊かになる",
             "グループレッスンでアンサンブルの楽しさを体感",
           ],
-          opts: { fillColor: COLORS.posBg, borderColor: COLORS.posBorder, titleColor: COLORS.posBorder },
+          opts: CARD_VARIANTS.pos,
         },
         {
-          x: TWO_COL.rightX,
-          w: TWO_COL.colW,
           title: "不満・ギャップ",
           body: [
             "模範演奏を聴くと楽譜を見ずに弾くようになってしまう",
@@ -753,10 +763,9 @@ slidesPlan.forEach((spec, idx) => {
             "オンライン振替では楽譜への素早い書き込み・丸つけが不可",
             "タイムラグで連弾やリズム合わせが成立しない",
           ],
-          opts: { fillColor: COLORS.negBg, borderColor: COLORS.negBorder, titleColor: COLORS.negBorder },
+          opts: CARD_VARIANTS.neg,
         },
       ]);
-      addFooter(slide, page, TOTAL, sectionLabels.yamaha);
       break;
 
     // ===== 講師育成 =====
@@ -781,7 +790,6 @@ slidesPlan.forEach((spec, idx) => {
         SLIDE.contentH,
         TYPOGRAPHY.slideBullet
       );
-      addFooter(slide, page, TOTAL, sectionLabels.trainer);
       break;
 
     case "trainer-service": {
@@ -791,10 +799,8 @@ slidesPlan.forEach((spec, idx) => {
         "書籍・養成講座・対談 CD・指導者クラスなど、複数の提供形態が並走する"
       );
       const gap = 0.20;
-      const row1H = addCardRow(slide, SLIDE.contentY, [
+      const row1H = addTwoColRow(slide, SLIDE.contentY, [
         {
-          x: TWO_COL.leftX,
-          w: TWO_COL.colW,
           title: "書籍・教材",
           body: [
             "尾島未佳氏『新しいソルフェージュ指導の教科書』（ヤマハ MEH、2,530 円）",
@@ -802,8 +808,6 @@ slidesPlan.forEach((spec, idx) => {
           ],
         },
         {
-          x: TWO_COL.rightX,
-          w: TWO_COL.colW,
           title: "養成講座・認定制度",
           body: [
             "川崎紫明音符ビッツ 指導者養成講座（脳科学ベース・40 年研究）",
@@ -812,10 +816,8 @@ slidesPlan.forEach((spec, idx) => {
         },
       ]);
       const row2Y = SLIDE.contentY + row1H + gap;
-      addCardRow(slide, row2Y, [
+      addTwoColRow(slide, row2Y, [
         {
-          x: TWO_COL.leftX,
-          w: TWO_COL.colW,
           title: "サブスク型コミュニティ",
           body: [
             "藤拓弘氏「ピアノ講師ラボ」",
@@ -824,8 +826,6 @@ slidesPlan.forEach((spec, idx) => {
           ],
         },
         {
-          x: TWO_COL.rightX,
-          w: TWO_COL.colW,
           title: "指導者クラス（対面）",
           body: [
             "東京藝大名誉教授・小鍛冶邦隆氏監修「NMP アカデミー」",
@@ -834,7 +834,6 @@ slidesPlan.forEach((spec, idx) => {
           ],
         },
       ]);
-      addFooter(slide, page, TOTAL, sectionLabels.trainer);
       break;
     }
 
@@ -872,7 +871,6 @@ slidesPlan.forEach((spec, idx) => {
         CONTENT_W,
         { colW: [3.0, 2.7, 3.0, 3.33], rowH: 0.95, fontSize: 10 }
       );
-      addFooter(slide, page, TOTAL, sectionLabels.trainer);
       break;
 
     case "trainer-marketing":
@@ -881,10 +879,8 @@ slidesPlan.forEach((spec, idx) => {
         "マーケティング・集客：個人発信メディア × 出版 × 業界団体経由",
         "SNS・YouTube・実用書・PTNA セミナー告知の組み合わせで講師リストを獲得"
       );
-      addCardRow(slide, TWO_COL.y, [
+      addTwoColRow(slide, TWO_COL.y, [
         {
-          x: TWO_COL.leftX,
-          w: TWO_COL.colW,
           title: "主要な集客チャネル",
           body: [
             "個人アメーバブログ",
@@ -894,8 +890,6 @@ slidesPlan.forEach((spec, idx) => {
           ],
         },
         {
-          x: TWO_COL.rightX,
-          w: TWO_COL.colW,
           title: "受講生を引きつけるフック",
           body: [
             "書籍プレゼント",
@@ -906,7 +900,6 @@ slidesPlan.forEach((spec, idx) => {
           ],
         },
       ]);
-      addFooter(slide, page, TOTAL, sectionLabels.trainer);
       break;
 
     case "trainer-approach":
@@ -915,10 +908,8 @@ slidesPlan.forEach((spec, idx) => {
         "「譜読み」に対するアプローチ：早期からの視覚・聴覚統合学習",
         "単なる音符暗記ではなく、独自メソッドとしての「早期譜読み力」を掲げる"
       );
-      addCardRow(slide, TWO_COL.y, [
+      addTwoColRow(slide, TWO_COL.y, [
         {
-          x: TWO_COL.leftX,
-          w: TWO_COL.colW,
           title: "音符ビッツ系メソッド",
           body: [
             "ト音・ヘ音記号を網羅したフラッシュカードを高速でめくる",
@@ -927,8 +918,6 @@ slidesPlan.forEach((spec, idx) => {
           ],
         },
         {
-          x: TWO_COL.rightX,
-          w: TWO_COL.colW,
           title: "幼児向け直感理解アプローチ",
           body: [
             "五線譜の「線の上（せん）」と「線の間（かん）」の違い",
@@ -937,7 +926,6 @@ slidesPlan.forEach((spec, idx) => {
           ],
         },
       ]);
-      addFooter(slide, page, TOTAL, sectionLabels.trainer);
       break;
 
     case "trainer-review":
@@ -946,10 +934,8 @@ slidesPlan.forEach((spec, idx) => {
         "ユーザー評判：地方からの学習価値とアナログ教具コストへの不満",
         "隙間時間に著名講師のメソッドを学べる一方、ライセンス料・大型教材の負担に不満が集中"
       );
-      addCardRow(slide, TWO_COL.y, [
+      addTwoColRow(slide, TWO_COL.y, [
         {
-          x: TWO_COL.leftX,
-          w: TWO_COL.colW,
           title: "ポジティブな評価",
           body: [
             "地方在住でも自宅で著名講師の指導法を繰り返し学べる",
@@ -957,11 +943,9 @@ slidesPlan.forEach((spec, idx) => {
             "音符ビッツ／どれみフレンズ導入で幼児が目の色を変える",
             "宿題を自発的に進めるようになった",
           ],
-          opts: { fillColor: COLORS.posBg, borderColor: COLORS.posBorder, titleColor: COLORS.posBorder },
+          opts: CARD_VARIANTS.pos,
         },
         {
-          x: TWO_COL.rightX,
-          w: TWO_COL.colW,
           title: "不満・ギャップ",
           body: [
             "准講師等の資格認定料・年会費・継続ライセンス維持コスト",
@@ -969,10 +953,9 @@ slidesPlan.forEach((spec, idx) => {
             "教材が物理的に大きく、出張レッスン時の持ち運びに難",
             "自宅教室での保管場所に窮する",
           ],
-          opts: { fillColor: COLORS.negBg, borderColor: COLORS.negBorder, titleColor: COLORS.negBorder },
+          opts: CARD_VARIANTS.neg,
         },
       ]);
-      addFooter(slide, page, TOTAL, sectionLabels.trainer);
       break;
 
     // ===== 個人オンライン =====
@@ -997,7 +980,6 @@ slidesPlan.forEach((spec, idx) => {
         SLIDE.contentH,
         TYPOGRAPHY.slideBullet
       );
-      addFooter(slide, page, TOTAL, sectionLabels.online);
       break;
 
     case "online-service":
@@ -1042,7 +1024,6 @@ slidesPlan.forEach((spec, idx) => {
           color: COLORS.muted,
         }
       );
-      addFooter(slide, page, TOTAL, sectionLabels.online);
       break;
 
     case "online-price":
@@ -1082,7 +1063,6 @@ slidesPlan.forEach((spec, idx) => {
         CONTENT_W,
         { colW: [3.5, 3.5, 5.03], rowH: 0.62, fontSize: 10 }
       );
-      addFooter(slide, page, TOTAL, sectionLabels.online);
       break;
 
     case "online-marketing":
@@ -1091,10 +1071,8 @@ slidesPlan.forEach((spec, idx) => {
         "マーケティング・集客：プラットフォーム SEO × 個人 SNS 発信",
         "ストアカ・ココナラ内検索、YouTube ノウハウ動画、Instagram リール、解説ブログを軸に展開"
       );
-      addCardRow(slide, TWO_COL.y, [
+      addTwoColRow(slide, TWO_COL.y, [
         {
-          x: TWO_COL.leftX,
-          w: TWO_COL.colW,
           title: "主要な集客チャネル",
           body: [
             "ストアカ／ココナラ内の検索 SEO（「ピアノ 譜読み」「楽譜 読めない」等）",
@@ -1104,8 +1082,6 @@ slidesPlan.forEach((spec, idx) => {
           ],
         },
         {
-          x: TWO_COL.rightX,
-          w: TWO_COL.colW,
           title: "受講生を惹きつける訴求メッセージ",
           body: [
             "指番号を全部書き込み、譜読みに迷う時間を削減",
@@ -1115,7 +1091,6 @@ slidesPlan.forEach((spec, idx) => {
           ],
         },
       ]);
-      addFooter(slide, page, TOTAL, sectionLabels.online);
       break;
 
     case "online-approach":
@@ -1124,10 +1099,8 @@ slidesPlan.forEach((spec, idx) => {
         "【重要】譜読みに対するアプローチ：論理化されているが体系化されていない",
         "「模様読み」「ブラインドタッチ」等のコツはあるが、独立した体系プログラムとしての提供は極めて少ない"
       );
-      addCardRow(slide, TWO_COL.y, [
+      addTwoColRow(slide, TWO_COL.y, [
         {
-          x: TWO_COL.leftX,
-          w: TWO_COL.colW,
           title: "提供されているアプローチ",
           body: [
             "音を 1 音ずつ数えず、音符の連なりをビジュアルパターン認識",
@@ -1137,18 +1110,15 @@ slidesPlan.forEach((spec, idx) => {
           ],
         },
         {
-          x: TWO_COL.rightX,
-          w: TWO_COL.colW,
           title: "構造的な限界",
           body: [
             "受講生が持ち込んだ課題曲を弾かせるための「手段」として扱われる",
             "レッスンの一部、または導入時のオマケとして口頭でアドバイス",
             "譜読み・ソルフェージュ単独の体系的パッケージプログラムは極めて少ない",
           ],
-          opts: { fillColor: COLORS.negBg, borderColor: COLORS.negBorder, titleColor: COLORS.negBorder },
+          opts: CARD_VARIANTS.neg,
         },
       ]);
-      addFooter(slide, page, TOTAL, sectionLabels.online);
       break;
 
     case "online-review":
@@ -1157,21 +1127,17 @@ slidesPlan.forEach((spec, idx) => {
         "ユーザー評判：伴走の安心感と、構造的なオンライン演奏指導の限界",
         "指番号代行・自習室スタイルは好評。一方、回線遅延・音色伝達・環境制約が深刻なボトルネック"
       );
-      addCardRow(slide, TWO_COL.y, [
+      addTwoColRow(slide, TWO_COL.y, [
         {
-          x: TWO_COL.leftX,
-          w: TWO_COL.colW,
           title: "ポジティブな評価",
           body: [
             "指番号書き込みで譜読みの停滞が消え、練習に集中できる",
             "オンライン自習室で隣に先生が伴走、挫折しない",
             "新しい曲を最後まで読み切れた",
           ],
-          opts: { fillColor: COLORS.posBg, borderColor: COLORS.posBorder, titleColor: COLORS.posBorder },
+          opts: CARD_VARIANTS.pos,
         },
         {
-          x: TWO_COL.rightX,
-          w: TWO_COL.colW,
           title: "不満・ギャップ（オンライン特有の深刻なボトルネック）",
           body: [
             "光回線でもコンマ数秒のタイムラグ → 連弾・歌唱伴奏が困難",
@@ -1179,10 +1145,9 @@ slidesPlan.forEach((spec, idx) => {
             "カメラ調整、騒音配慮による電子ピアノの音量と打鍵のミスマッチ",
             "導入期の子供は保護者の付き添いがないとレッスンが成立しない",
           ],
-          opts: { fillColor: COLORS.negBg, borderColor: COLORS.negBorder, titleColor: COLORS.negBorder },
+          opts: CARD_VARIANTS.neg,
         },
       ]);
-      addFooter(slide, page, TOTAL, sectionLabels.online);
       break;
 
     case "matrix":
@@ -1225,7 +1190,6 @@ slidesPlan.forEach((spec, idx) => {
         CONTENT_W,
         { colW: [1.5, 2.0, 2.0, 2.3, 1.7, 2.53], rowH: 1.20, fontSize: 9 }
       );
-      addFooter(slide, page, TOTAL, sectionLabels.matrix);
       break;
 
     // ===== 結論 =====
@@ -1245,7 +1209,7 @@ slidesPlan.forEach((spec, idx) => {
             "回線遅延／デジタル圧縮による音質劣化に左右される「リアルタイム演奏指導」",
             "音を合わせる・微細な音色を聴き取る対面型実技",
           ],
-          opts: { fillColor: COLORS.negBg, borderColor: COLORS.negBorder, titleColor: COLORS.negBorder },
+          opts: CARD_VARIANTS.neg,
         },
       ]);
       const card2Y = SLIDE.contentY + card1H + gap;
@@ -1260,10 +1224,9 @@ slidesPlan.forEach((spec, idx) => {
             "動画提出による添削型プログラム",
             "タイムラグを完全に不問とし、オンラインでも高満足度を実現",
           ],
-          opts: { fillColor: COLORS.accentLight, borderColor: COLORS.accent, titleColor: COLORS.accent },
+          opts: CARD_VARIANTS.accent,
         },
       ]);
-      addFooter(slide, page, TOTAL, sectionLabels.conclusion);
       break;
     }
 
@@ -1273,31 +1236,26 @@ slidesPlan.forEach((spec, idx) => {
         "2. 大手卒業生の「耳コピ依存脱却・譜読み自立パッケージ」",
         "大手が長年解決できていない「最大の顧客の痛み」をそのまま集客フックに転換する"
       );
-      addCardRow(slide, TWO_COL.y, [
+      addTwoColRow(slide, TWO_COL.y, [
         {
-          x: TWO_COL.leftX,
-          w: TWO_COL.colW,
           title: "ターゲットの痛み",
           body: [
             "ヤマハ・カワイ出身の「耳が極めて良いが楽譜が読めない」ジュニア期生徒",
             "幼児期に育てた音感が、児童期には読譜の阻害要因になる",
             "大手の体系では構造的に解消できない副作用（譜読み難民）",
           ],
-          opts: { fillColor: COLORS.negBg, borderColor: COLORS.negBorder, titleColor: COLORS.negBorder },
+          opts: CARD_VARIANTS.neg,
         },
         {
-          x: TWO_COL.rightX,
-          w: TWO_COL.colW,
           title: "提供する解",
           body: [
             "「耳コピ依存から自立するロジカル読譜マスターコース」を開発",
             "既存の「聴こえるドレミ」を「五線の視覚記号」へ論理的にブリッジ",
             "大手の卒業生／在籍生をそのまま自社事業の集客流入として活用",
           ],
-          opts: { fillColor: COLORS.accentLight, borderColor: COLORS.accent, titleColor: COLORS.accent },
+          opts: CARD_VARIANTS.accent,
         },
       ]);
-      addFooter(slide, page, TOTAL, sectionLabels.conclusion);
       break;
 
     case "conclusion-3":
@@ -1306,21 +1264,17 @@ slidesPlan.forEach((spec, idx) => {
         "3. ピアノ講師向け：紙の教具を不要にする完全デジタル教材のサブスク",
         "アナログ高額囲い込みモデルから、個人講師の指導現場をそのまま奪取する"
       );
-      addCardRow(slide, TWO_COL.y, [
+      addTwoColRow(slide, TWO_COL.y, [
         {
-          x: TWO_COL.leftX,
-          w: TWO_COL.colW,
           title: "既存モデルの負担",
           body: [
             "高額な養成費用・年会費・継続ライセンス",
             "数万円規模の大型フラッシュカードや教材セット",
             "出張レッスンでの持ち運び・教室での保管場所",
           ],
-          opts: { fillColor: COLORS.negBg, borderColor: COLORS.negBorder, titleColor: COLORS.negBorder },
+          opts: CARD_VARIANTS.neg,
         },
         {
-          x: TWO_COL.rightX,
-          w: TWO_COL.colW,
           title: "提供する解",
           body: [
             "タブレット／PC／プロジェクター画面に映すだけで導入可能",
@@ -1328,10 +1282,9 @@ slidesPlan.forEach((spec, idx) => {
             "「1 レッスン 5 分の指導法コンサルティング」をセット化",
             "初期投資ゼロ／管理ストレスゼロで顧客を奪取",
           ],
-          opts: { fillColor: COLORS.accentLight, borderColor: COLORS.accent, titleColor: COLORS.accent },
+          opts: CARD_VARIANTS.accent,
         },
       ]);
-      addFooter(slide, page, TOTAL, sectionLabels.conclusion);
       break;
 
     case "conclusion-4":
@@ -1340,21 +1293,17 @@ slidesPlan.forEach((spec, idx) => {
         "4. 大人の再開組向け：模様読み × ブラインドタッチを段階的自立ワークブック化",
         "「書き込み代行」が阻害している自立的読譜を、段階的ガイド消去型ドリルで習得させる"
       );
-      addCardRow(slide, TWO_COL.y, [
+      addTwoColRow(slide, TWO_COL.y, [
         {
-          x: TWO_COL.leftX,
-          w: TWO_COL.colW,
           title: "既存サービスの構造課題",
           body: [
             "ココナラの「指番号・ドレミ全書き込み」は短期的には便利",
             "結局「書き込まないと弾けない」状態が固定化し、自立的読譜を阻害",
             "教材は属人化し、決まった体系もない",
           ],
-          opts: { fillColor: COLORS.negBg, borderColor: COLORS.negBorder, titleColor: COLORS.negBorder },
+          opts: CARD_VARIANTS.neg,
         },
         {
-          x: TWO_COL.rightX,
-          w: TWO_COL.colW,
           title: "提供する解",
           body: [
             "模様読み（音程の物理的距離パターン認識）を徹底的にロジック化",
@@ -1362,10 +1311,9 @@ slidesPlan.forEach((spec, idx) => {
             "初期はガイドがフル表示、ドリル進行で段階的に消えるデジタル連動教材",
             "最終的に「真っ白な楽譜を自力でブラインドタッチで弾ける」状態に到達",
           ],
-          opts: { fillColor: COLORS.accentLight, borderColor: COLORS.accent, titleColor: COLORS.accent },
+          opts: CARD_VARIANTS.accent,
         },
       ]);
-      addFooter(slide, page, TOTAL, sectionLabels.conclusion);
       break;
 
     default:
@@ -1378,7 +1326,11 @@ slidesPlan.forEach((spec, idx) => {
         fontSize: TYPOGRAPHY.todo.size,
         color: COLORS.negBorder,
       });
-      addFooter(slide, page, TOTAL, "要確認");
+  }
+
+  const section = sectionOf(spec.kind);
+  if (section !== null) {
+    addFooter(slide, page, TOTAL, section);
   }
 });
 
