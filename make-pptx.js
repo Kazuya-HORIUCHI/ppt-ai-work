@@ -60,12 +60,19 @@ const CARD = {
   heightSafety: 1.05,
 };
 
+// 1 文字の表示幅を「全角換算」で返す（全角=1.0, 半角=0.5）。
+// 判定は Unicode のブロック単位で、Yu Gothic / 一般的な CJK フォントで
+// 半角プロポーショナル描画される範囲を半角と見なす。
 function visualCharWidth(text) {
   let v = 0;
   for (const ch of String(text)) {
     const code = ch.charCodeAt(0);
-    if (code <= 0x7F) v += 0.5;
-    else if (code >= 0xFF61 && code <= 0xFF9F) v += 0.5;
+    // ASCII（0x20-0x7E）、Latin-1 補助（× ÷ ° ± § © など）、Latin Extended-A/B、
+    // IPA 拡張、修飾文字、結合分音記号、ギリシャ、キリル、ヘブライ、アラビア。
+    if (code <= 0x07FF) v += 0.5;
+    // 半角カナ／半角ハングル等の Halfwidth Forms
+    else if (code >= 0xFF61 && code <= 0xFFDC) v += 0.5;
+    // それ以外は全角扱い（CJK 漢字／かな／全角形／全角記号など）
     else v += 1.0;
   }
   return v;
@@ -122,8 +129,12 @@ function addTitle(slide, title, message) {
     color: COLORS.text,
     valign: "middle",
   });
+  // アクセント線はタイトルの実描画幅に合わせる。
+  // CJK 文字は em-square (fontSize/72 in) でほぼ等幅に描画される。
+  // 実測でわずかに短くなるため、ACCENT_LINE_W_FACTOR で微補正する。
+  const ACCENT_LINE_W_FACTOR = 1.04;
   const accentLineW = Math.min(
-    estimateTextWidth(title, TITLE_FONT_SIZE, { bold: true }),
+    visualCharWidth(title) * (TITLE_FONT_SIZE / 72) * ACCENT_LINE_W_FACTOR,
     CONTENT_W
   );
   slide.addShape(pptx.ShapeType.rect, {
