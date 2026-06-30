@@ -61,6 +61,17 @@ const CARD_VARIANTS = {
 };
 
 // カード／ボックスの内側余白・本文高さ推定パラメータ（幾何のみ）
+//
+// charWMultiplier:
+//   1 文字あたりの推定幅 = (fontSize / 72) * charWMultiplier (inches)。
+//   実描画（Yu Gothic, 12pt）で 1 行に収まる字数の実測上限と、
+//   Math.floor(usableW / charWIn) の結果が一致する最大値を逆算する:
+//     comparison-2 (usableW = 5.2065 in, 実測上限 29 字) → multiplier ≤ 5.2065 / 29 / (12/72) ≈ 1.0772
+//     trio        (usableW = 3.258 in,  実測上限 17 字) → multiplier ≤ 3.258  / 17 / (12/72) ≈ 1.1499
+//   comparison-2 側がより厳しい上限を課すため、その制約を満たす値として 1.07 を採用。
+//   trio 側は実測 17 字に対して formula は 18 字/行と算出する（やや楽観的）が、
+//   17 字ルールを README/SKILL で守らせている限りカード高の不足は発生しない。
+//   1.07 未満まで下げると、長い本文が想定外に 1 行扱いされ、カード高が不足するリスクが増える。
 const CARD = {
   padTop: 0.22,
   padBottom: 0.34,
@@ -68,7 +79,7 @@ const CARD = {
   titleH: 0.28,
   titleBodyGap: 0.10,
   bulletIndentIn: 0.30,
-  charWMultiplier: 1.1,
+  charWMultiplier: 1.07,
   heightSafety: 1.05,
 };
 
