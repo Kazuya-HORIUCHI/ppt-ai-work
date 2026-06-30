@@ -106,7 +106,7 @@ module.exports = {
 |---|---|
 | [`comparison-2`](#comparison-2) | 2 主体の対比 |
 | [`trio`](#trio) | 3 並列のカード（トレンド・観点等） |
-| [`capture-cards`](#capture-cards) | 価格表 / スペック比較に近い、タイトル帯 + 区切り線つき短文リスト |
+| [`panel-cards`](#panel-cards) | 価格表 / スペック比較に近い、タイトル帯 + 区切り線つき短文リスト |
 
 ### 写真系
 
@@ -136,7 +136,7 @@ module.exports = {
 | 数値や属性の比較 | `data-table` |
 | 2 つの主体（案 / 部署 / 競合等）の対比 | `comparison-2` |
 | 3 つの並列観点 | `trio` |
-| 価格表 / スペック表のようにラベル + 短文の組を 2〜3 並べたい | `capture-cards` |
+| 価格表 / スペック表のようにラベル + 短文の組を 2〜3 並べたい | `panel-cards` |
 | 事例紹介で写真とテキストを同列に並べたい | `photo-card` |
 | **時系列・手順・依存関係（順序が意味を持つ）** | `flow-diagram` / `process-stages` |
 | **2 軸で分類できる項目群** | `matrix-2x2` |
@@ -325,23 +325,25 @@ module.exports = {
 - 件数上限は comparison-2 と同じ（カード高はカード幅に依存しない）。差が出るのは「1 bullet が 1 行で収まる文字数」で、trio はカードが狭い分シビア
 - 上限を超えそうな場合は、bullet を短縮する／別 kind（`bullets` で一覧化、`data-table` で構造化 等）に変える／観点を絞る のいずれかで対応する
 
-### capture-cards
+### panel-cards
 
 価格表 / スペック比較のような外観のカードを 2〜3 枚並べる。各カードはタイトル帯（青背景の白文字）と、区切り線で仕切られた短文リストで構成される。
 
 ```js
 {
-  kind: "capture-cards",
+  kind: "panel-cards",
   section: "compare",
   title: "スライドタイトル",
   message: "サブメッセージ（省略可）",
   cards: [
     { title: "Freebie",  items: ["One account", "Base level access", "10GB space", "Free"] },
     { title: "Mid-level", items: ["Up to 5 user accounts", "Some special features", "15GB space", "$15 pm"] },
-    { title: "Premium",   items: ["Unlimited user accounts", "All the added trimmings", "50GB space", "$30 pm"] },
+    { title: "Premium",   items: ["Unlimited user accounts", "All the added trimmings", "50GB space", "$30 pm"], variant: "accent" },
   ],
 }
 ```
+
+各カードに `variant: "accent" | "pos" | "neg"` を指定するとタイトル帯と本文枠線の色が切り替わる。省略時は `accent`（テーマ青）。`pos` は緑、`neg` は赤で、`comparison-2` の variant と同じ色味を用いる。
 
 **visual の特徴**
 
@@ -353,13 +355,13 @@ module.exports = {
 
 - `comparison-2`: 2 主体の対比で、各カードに数件の bullet を載せる本文中心の構成
 - `trio`: 3 つの並列観点をフラットに並べる
-- `capture-cards`: 並列観点の「項目名」が短く、ラベル付きスペック表のように整列させたい場合。1 item が 1 行で読み切れる短文向け
+- `panel-cards`: 並列観点の「項目名」が短く、ラベル付きスペック表のように整列させたい場合。1 item が 1 行で読み切れる短文向け
 
 **制約**
 
 - `cards.length` は **2 または 3**。4 枚以上は `data-table` を検討する
 - 各 item は **1 行で収まる短文** を前提とする（折り返しは想定しない）
-- variant 系のカラーバリエーションは持たない（タイトル帯は常にテーマ青）
+- `variant` は `accent` / `pos` / `neg` のみ。`comparison-2` の `gray` 等は持たない
 
 **カード高 / 文字数の上限**
 
@@ -367,10 +369,16 @@ module.exports = {
 
 | 配置 | カード幅 (in) | 内側幅 (in) | 1 item の全角換算字数 | 半角換算字数 (参考) |
 |---|---|---|---|---|
-| 3 枚並べ | 3.824 | 3.424 | **17 字** | 34 字 |
-| 2 枚並べ | 3.824 | 3.424 | **17 字** | 34 字 |
+| 3 枚並べ | 3.824 (固定) | 3.424 | **17 字** | 34 字 |
+| 2 枚並べ | 3.824 〜 5.20 (動的) | 3.424 〜 4.80 | **17 字（既定）〜 25 字** | 34 字 〜 50 字 |
 
-カード幅は 2 枚 / 3 枚で共通とし、文字数上限も揃える。値は `trio` で測定された worst-case の 1 文字あたり描画幅 `0.192 in/全角` を使い、`floor(3.424 / 0.192) = 17` 字。
+カード幅と字数上限の関係:
+
+- 既定の `cardW` は `3.824 in`。これは 3 枚配置でカード間隔 `0.28 in` を取って算出した値で、`trio` で測定された worst-case の 1 文字あたり描画幅 `0.192 in/全角` を使うと `floor(3.424 / 0.192) = 17` 字
+- **2 枚配置のみ**、いずれかの item が 17 字を超えた場合、`cardW` を `maxChars × 0.192 + 2 × itemPadSide` で再計算してカードをスライド端に向かって自動拡大する。上限は `25 字`（cardW = 5.20 in、コンテンツ領域内に収まる範囲）
+- 3 枚配置は cardW を据え置く（17 字を超えた場合は折り返し / 短縮 / 別 kind を検討）
+
+配置:
 
 - 3 枚配置はカード間隔を `0.28 in` 取り、カードはコンテンツ領域左から詰めて配置する
 - 2 枚配置はカード間隔を `0.935 in`（`SLIDE.marginX (0.65 in)` よりやや狭い `0.55 in` を基準に 1.7 倍した値）取り、コンテンツ領域内で水平中央に配置する

@@ -307,35 +307,44 @@ function addCardRow(slide, y, cards) {
   return rowH;
 }
 
-// ---------- キャプチャ風カード（タイトル帯 + 区切り線つきリスト） ----------
+// ---------- 見出し帯付きパネルカード（タイトル帯 + 区切り線つきリスト） ----------
 //
-// 「Pricing Tiers」のような外観のカード。
-// - タイトルはアクセント色（青）背景の白文字で帯状に表示
+// 「Pricing Tiers」「pros/cons」「観点別ラベル」のような外観のカード。
+// - タイトル帯はカード単位で variant 切替可（accent / pos / neg）
 // - body は短文の items 配列のみ受け付ける（箇条書きマーカーは描画しない）
 // - items は 1 行で表示することを前提とする（折り返しは考慮しない）
 // - 各 item はカード幅で水平中央揃え
 // - item 間および空スロット間に薄いセパレータ線を入れる
-const CAPTURE_CARD = {
+const PANEL_CARD = {
   titleBarH: 0.55,
   itemRowH: 0.55,
   itemPadSide: 0.20,
   separatorH: 0.008,
 };
 
+// panel-card のカラー variant。タイトル帯と本文枠線をセットで切り替える。
+// 既定は accent（テーマ青）。pos / neg は comparison-2 と同じ色味を流用する。
+const PANEL_CARD_VARIANTS = {
+  accent: { titleBarColor: COLORS.accent,    bodyBorderColor: COLORS.border },
+  pos:    { titleBarColor: COLORS.posBorder, bodyBorderColor: COLORS.posBorder },
+  neg:    { titleBarColor: COLORS.negBorder, bodyBorderColor: COLORS.negBorder },
+};
+
 // items を 1 行ずつ並べる前提で、カード全体の高さを返す。
-function captureCardHeight(items) {
-  return CAPTURE_CARD.titleBarH + items.length * CAPTURE_CARD.itemRowH;
+function panelCardHeight(items) {
+  return PANEL_CARD.titleBarH + items.length * PANEL_CARD.itemRowH;
 }
 
-function addCaptureCard(slide, x, y, w, h, title, items) {
-  // タイトル帯（アクセント色背景・白文字）
+function addPanelCard(slide, x, y, w, h, title, items, opts = {}) {
+  const variant = PANEL_CARD_VARIANTS[opts.variant] || PANEL_CARD_VARIANTS.accent;
+  // タイトル帯（variant 色背景・白文字）
   slide.addShape(ShapeType.rect, {
-    x, y, w, h: CAPTURE_CARD.titleBarH,
-    fill: { color: COLORS.accent },
+    x, y, w, h: PANEL_CARD.titleBarH,
+    fill: { color: variant.titleBarColor },
     line: { type: "none" },
   });
   slide.addText(title, {
-    x, y, w, h: CAPTURE_CARD.titleBarH,
+    x, y, w, h: PANEL_CARD.titleBarH,
     fontFace: FONT.body,
     fontSize: TYPOGRAPHY.cardTitle.size,
     bold: TYPOGRAPHY.cardTitle.bold,
@@ -344,28 +353,28 @@ function addCaptureCard(slide, x, y, w, h, title, items) {
     valign: "middle",
   });
 
-  // ボディ領域（白背景 + 薄い枠線）
-  const bodyY = y + CAPTURE_CARD.titleBarH;
-  const bodyH = h - CAPTURE_CARD.titleBarH;
+  // ボディ領域（白背景 + variant 枠線）
+  const bodyY = y + PANEL_CARD.titleBarH;
+  const bodyH = h - PANEL_CARD.titleBarH;
   slide.addShape(ShapeType.rect, {
     x, y: bodyY, w, h: bodyH,
     fill: { color: COLORS.bg },
-    line: { color: COLORS.border, width: 0.5 },
+    line: { color: variant.bodyBorderColor, width: 0.5 },
   });
 
   // items は内側幅で水平中央揃え。
   // pptxgenjs の既定 inset（左右計 ≈ 0.2 in）が実描画幅を削るため、
   // margin: 0 で inset を打ち消し、innerW いっぱいをテキスト描画に使う。
-  const innerX = x + CAPTURE_CARD.itemPadSide;
-  const innerW = w - CAPTURE_CARD.itemPadSide * 2;
+  const innerX = x + PANEL_CARD.itemPadSide;
+  const innerW = w - PANEL_CARD.itemPadSide * 2;
 
   items.forEach((item, i) => {
-    const itemY = bodyY + i * CAPTURE_CARD.itemRowH;
+    const itemY = bodyY + i * PANEL_CARD.itemRowH;
     slide.addText(item, {
       x: innerX,
       y: itemY,
       w: innerW,
-      h: CAPTURE_CARD.itemRowH,
+      h: PANEL_CARD.itemRowH,
       margin: 0,
       fontFace: FONT.body,
       fontSize: TYPOGRAPHY.cardBody.size,
@@ -378,27 +387,27 @@ function addCaptureCard(slide, x, y, w, h, title, items) {
   // 区切り線は items 件数ではなく、行高から逆算したスロット数ぶん引く。
   // 行の少ないカードと多いカードを横並びにすると、items 件数で打ち切ると
   // 下部が間延びして見えるため、全スロット分まで線を引いて高さを揃える。
-  const slots = Math.round(bodyH / CAPTURE_CARD.itemRowH);
+  const slots = Math.round(bodyH / PANEL_CARD.itemRowH);
   for (let i = 1; i < slots; i++) {
-    const sepY = bodyY + i * CAPTURE_CARD.itemRowH;
+    const sepY = bodyY + i * PANEL_CARD.itemRowH;
     slide.addShape(ShapeType.rect, {
-      x: x + CAPTURE_CARD.itemPadSide,
-      y: sepY - CAPTURE_CARD.separatorH / 2,
-      w: w - CAPTURE_CARD.itemPadSide * 2,
-      h: CAPTURE_CARD.separatorH,
+      x: x + PANEL_CARD.itemPadSide,
+      y: sepY - PANEL_CARD.separatorH / 2,
+      w: w - PANEL_CARD.itemPadSide * 2,
+      h: PANEL_CARD.separatorH,
       fill: { color: COLORS.border },
       line: { type: "none" },
     });
   }
 }
 
-// 同一行のキャプチャ風カード群を、最大 item 数に合わせて同じ高さで描画する。
-// cards: [{ x, w, title, items }]
-function addCaptureCardRow(slide, y, cards) {
+// 同一行のパネルカード群を、最大 item 数に合わせて同じ高さで描画する。
+// cards: [{ x, w, title, items, variant? }]
+function addPanelCardRow(slide, y, cards) {
   const maxItems = Math.max(...cards.map((c) => c.items.length));
-  const rowH = CAPTURE_CARD.titleBarH + maxItems * CAPTURE_CARD.itemRowH;
+  const rowH = PANEL_CARD.titleBarH + maxItems * PANEL_CARD.itemRowH;
   cards.forEach((c) => {
-    addCaptureCard(slide, c.x, y, c.w, rowH, c.title, c.items);
+    addPanelCard(slide, c.x, y, c.w, rowH, c.title, c.items, { variant: c.variant });
   });
   return rowH;
 }
@@ -488,21 +497,22 @@ module.exports = {
   TWO_COL,
   CARD,
   CARD_VARIANTS,
-  CAPTURE_CARD,
+  PANEL_CARD,
+  PANEL_CARD_VARIANTS,
   TYPOGRAPHY,
   ShapeType,
   visualCharWidth,
   estimateBodyHeight,
   cardHeight,
-  captureCardHeight,
+  panelCardHeight,
   addTitle,
   addFooter,
   addBullets,
   addCard,
   addCardRow,
   addTwoColRow,
-  addCaptureCard,
-  addCaptureCardRow,
+  addPanelCard,
+  addPanelCardRow,
   addTable,
   buildSectionDivider,
 };

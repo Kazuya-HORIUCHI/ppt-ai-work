@@ -189,11 +189,41 @@ module.exports = {
     },
 
     {
-      kind: "capture-cards",
+      kind: "panel-cards",
       section: "compare",
-      title: "kind: capture-cards ─ trio と同一内容の比較",
+      title: "kind: panel-cards ─ ポジ／ネガで色分け",
       message:
-        "上の trio スライドと同じ並列観点（速度 / 品質 / コスト）を capture-cards で描いた版。タイトル帯と区切り線で「項目を読む」前提のレイアウトに切り替わる。",
+        "variant に pos / neg / accent を指定するとカードの色が切り替わる。左 3 件・右 5 件で件数差のあるケースを確認する。最長 item が 17 字を超えるとカード幅は自動でスライド端に向かって広がる（最大 25 字）。",
+      cards: [
+        {
+          title: "良い側面",
+          variant: "pos",
+          items: [
+            "学習コストが低い",
+            "既存システムと衝突しない",
+            "段階的に導入できる",
+          ],
+        },
+        {
+          title: "懸念点",
+          variant: "neg",
+          items: [
+            "長期メンテで属人化しやすい",
+            "他資料との表現が不揃いになる",
+            "コーポレートテーマの刷新時に追従が困難", // 19 字
+            "レビュー時のチェックポイントが増える",   // 18 字
+            "障害発生時の原因切り分けが難しくなる",   // 18 字
+          ],
+        },
+      ],
+    },
+
+    {
+      kind: "panel-cards",
+      section: "compare",
+      title: "kind: panel-cards ─ trio と同一内容の比較",
+      message:
+        "上の trio スライドと同じ並列観点（速度 / 品質 / コスト）を panel-cards で描いた版。タイトル帯と区切り線で「項目を読む」前提のレイアウトに切り替わる。",
       cards: [
         {
           title: "観点 1: 速度",
@@ -211,9 +241,9 @@ module.exports = {
     },
 
     {
-      kind: "capture-cards",
+      kind: "panel-cards",
       section: "compare",
-      title: "kind: capture-cards ─ 3 枚版（境界含む / 含まない混在）",
+      title: "kind: panel-cards ─ 3 枚版（境界含む / 含まない混在）",
       message:
         "3 枚並べる構成。1 カード 7 件まで・全角 17 字まで。カードごとに行数 / 文字数の上限到達有無を変えて配置している。",
       cards: [
@@ -257,9 +287,9 @@ module.exports = {
     },
 
     {
-      kind: "capture-cards",
+      kind: "panel-cards",
       section: "compare",
-      title: "kind: capture-cards ─ 2 枚版（境界含む / 含まない混在）",
+      title: "kind: panel-cards ─ 2 枚版（境界含む / 含まない混在）",
       message:
         "2 枚並べる構成。カード幅は 3 枚版と同じ。1 カード 7 件まで・全角 17 字まで。左カードは行数上限ぴったり、右カードは文字数上限を含む。",
       cards: [
@@ -583,9 +613,9 @@ module.exports = {
     },
 
     {
-      kind: "capture-cards",
+      kind: "panel-cards",
       section: "boundary",
-      title: "capture-cards 3 枚 ─ 上限超過（8 件 / 全角 18 字）",
+      title: "panel-cards 3 枚 ─ 上限超過（8 件 / 全角 18 字）",
       message:
         "件数 8 件（上限 7 を 1 件超過）、一部 item が全角 18 字（上限 17 を 1 字超過）。フッターとの干渉と自動折り返しの挙動を目視確認する。",
       cards: [
@@ -632,9 +662,9 @@ module.exports = {
     },
 
     {
-      kind: "capture-cards",
+      kind: "panel-cards",
       section: "boundary",
-      title: "capture-cards 2 枚 ─ 上限超過（8 件 / 全角 18 字）",
+      title: "panel-cards 2 枚 ─ 上限超過（8 件 / 全角 18 字）",
       message:
         "件数 8 件、一部 item が全角 18 字（上限 17 を 1 字超過）。フッターとの干渉と自動折り返しの挙動を目視確認する。",
       cards: [
