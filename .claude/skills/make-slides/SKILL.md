@@ -1,6 +1,6 @@
 ---
 name: make-slides
-description: Generate a .pptx deck from a source file using this project's semantic-slot kind vocabulary (see README.md). Use when the user wants to build slides from a markdown/text/doc file AND has supplied (a) a path to the source file and (b) a prompt describing the desired granularity, audience, tone, and emphasis. The skill reads the source, designs the deck via the kind language defined in README.md, writes a deck-<slug>.js, runs renderer.js, and produces the .pptx.
+description: 本プロジェクトのセマンティック・スロット方式の kind 語彙（README.md 参照）を使って、情報源ファイルから .pptx デッキを生成する。ユーザがスライド / デッキ / pptx / プレゼン資料を作りたいという意思を見せた時点で発動すること（「スライド作って」「資料化して」「pptx にして」「プレゼンにまとめて」等）。情報源ファイルのパスや粒度・オーディエンス・トーン・強調点などの必要情報が揃っていない場合は、推測せず skill 内で AskUserQuestion により確認してから進める。本 skill は情報源を読み込み、README.md で定義された kind 言語に従ってデッキを設計し、deck-<slug>.js を書き出し、renderer.js を実行して .pptx を生成する。
 ---
 
 # make-slides
