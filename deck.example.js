@@ -17,6 +17,7 @@ module.exports = {
   sections: {
     text: "テキスト系の例",
     compare: "比較系の例",
+    photo: "写真系の例",
     diagram: "図形系の例",
     boundary: "境界出力サンプル",
   },
@@ -190,6 +191,33 @@ module.exports = {
     {
       kind: "section-divider",
       label: "Section 3",
+      title: "写真系の kind",
+    },
+
+    // ============== 写真系 ==============
+    {
+      kind: "photo-card",
+      section: "photo",
+      title: "kind: photo-card ─ 事例紹介（右に写真 / 左にカード）",
+      message:
+        "右に写真エリア (6/10)、左に箇条書きカード (4/10)。間に gap を取り、写真は 4:3 を contain で配置する。",
+      card: {
+        title: "導入事例: 某社の業務効率化",
+        body: [
+          "課題: 月次レポートに 3 日かかっていた",
+          "施策: テンプレ化 + 集計ジョブの自動化",
+          "成果: 作業時間を 1/8 まで短縮",
+          "副次効果: レビュー工数も合わせて削減",
+        ],
+      },
+      image: {
+        src: "assets/samples/case-1.png",
+      },
+    },
+
+    {
+      kind: "section-divider",
+      label: "Section 4",
       title: "図形系の kind",
     },
 
@@ -277,7 +305,7 @@ module.exports = {
     // 検証用スライド群。「ちょうど上限」と「上限超過」の両方を入れ、レイアウト切替の挙動も確認する。
     {
       kind: "section-divider",
-      label: "Section 4",
+      label: "Section 5",
       title: "境界出力サンプル（カード上限の目視確認）",
     },
 
