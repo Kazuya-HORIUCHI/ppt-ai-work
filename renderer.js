@@ -42,6 +42,10 @@ pptx.title = deck.meta.title;
 
 const TOTAL = deck.slides.length;
 
+// カード行の固定上余白（cardRowY の既定オフセット）。
+// 6 件程度の bullet がちょうど良く見える位置として決め打ち。詳細は cardRowY のコメント参照。
+const CARD_TOP_GAP = 0.63;
+
 // spec から footer に表示するセクション文字列を解決する。
 // null を返す場合は footer 自体を描画しない（title-slide）。
 // "" を返す場合はセクション名なしの footer（section-divider）。
@@ -98,12 +102,20 @@ function variantOpts(variant) {
 }
 
 // カード行の y 位置を返す。
-// 行をコンテンツ領域内の「上から 1/3」の位置に置く（完全中央より少し上）。
-// 行高がコンテンツ領域以上のときは contentY を天井としてそこに揃え、超過分は下方向にあふれさせる。
+//
+// 配置ルール:
+//   1. 既定: 上から固定オフセット (CARD_TOP_GAP) の位置に揃える。
+//      6 件程度の bullet がちょうど良く見える位置として決め打ち。
+//   2. 行が高くなり下の余白が上の余白より小さくなる場合 (slack < 2 * CARD_TOP_GAP):
+//      上下中央揃えに切り替える。固定値からシームレスに連続する。
+//   3. 行高がコンテンツ領域を超える場合: contentY を天井としてそこに揃え、超過分は下方向にあふれる。
 function cardRowY(cards) {
   const rowH = Math.max(...cards.map((c) => cardHeight(c.title, c.body, c.w)));
   const slack = SLIDE.contentH - rowH;
-  return SLIDE.contentY + Math.max(0, slack / 3);
+  if (slack < 2 * CARD_TOP_GAP) {
+    return SLIDE.contentY + Math.max(0, slack / 2);
+  }
+  return SLIDE.contentY + CARD_TOP_GAP;
 }
 
 // 図形系 kind 用の汎用ボックス（ラベル + 補足）描画ヘルパー。
