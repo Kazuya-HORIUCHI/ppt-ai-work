@@ -57,6 +57,7 @@ const CARD_VARIANTS = {
   neg:    { fillColor: COLORS.negBg,       borderColor: COLORS.negBorder, titleColor: COLORS.negBorder },
   pos:    { fillColor: COLORS.posBg,       borderColor: COLORS.posBorder, titleColor: COLORS.posBorder },
   accent: { fillColor: COLORS.accentLight, borderColor: COLORS.accent,    titleColor: COLORS.accent    },
+  gray:   { fillColor: COLORS.bgSubtle,    borderColor: COLORS.border,    titleColor: COLORS.text      },
 };
 
 // カード／ボックスの内側余白・本文高さ推定パラメータ（幾何のみ）
@@ -381,6 +382,7 @@ module.exports = {
   CARD,
   CARD_VARIANTS,
   TYPOGRAPHY,
+  ShapeType,
   visualCharWidth,
   estimateBodyHeight,
   cardHeight,
