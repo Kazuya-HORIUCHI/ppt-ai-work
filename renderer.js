@@ -16,6 +16,7 @@ const {
   CARD_VARIANTS,
   TYPOGRAPHY,
   ShapeType,
+  cardHeight,
   addTitle,
   addFooter,
   addBullets,
@@ -94,6 +95,15 @@ function variantOpts(variant) {
   if (variant === "accent") return CARD_VARIANTS.accent;
   if (variant === "gray") return CARD_VARIANTS.gray;
   return {}; // neutral / 未指定はカード既定スタイル（タイトルがアクセント色）
+}
+
+// カード行の y 位置を返す。
+// 行をコンテンツ領域内の「上から 1/3」の位置に置く（完全中央より少し上）。
+// 行高がコンテンツ領域以上のときは contentY を天井としてそこに揃え、超過分は下方向にあふれさせる。
+function cardRowY(cards) {
+  const rowH = Math.max(...cards.map((c) => cardHeight(c.title, c.body, c.w)));
+  const slack = SLIDE.contentH - rowH;
+  return SLIDE.contentY + Math.max(0, slack / 3);
 }
 
 // 図形系 kind 用の汎用ボックス（ラベル + 補足）描画ヘルパー。
@@ -237,18 +247,23 @@ function renderDataTable(slide, spec) {
 
 function renderComparison2(slide, spec) {
   addTitle(slide, spec.title, spec.message);
-  addTwoColRow(slide, TWO_COL.y, [
+  // x/w は addTwoColRow が注入するが、行高の事前計算には w が必要なので
+  // 同じ値を centeredCardRowY 用の card 仮オブジェクトにも持たせる。
+  const cards = [
     {
       title: spec.left.title,
       body: spec.left.body,
+      w: TWO_COL.colW,
       opts: variantOpts(spec.left.variant),
     },
     {
       title: spec.right.title,
       body: spec.right.body,
+      w: TWO_COL.colW,
       opts: variantOpts(spec.right.variant),
     },
-  ]);
+  ];
+  addTwoColRow(slide, cardRowY(cards), cards);
 }
 
 function renderTrio(slide, spec) {
@@ -257,17 +272,14 @@ function renderTrio(slide, spec) {
   const cardW = (CONTENT_W - cardGapX * 2) / 3;
   // trio の各カードは既定で "gray"（並列観点をフラットに見せる）。
   // 強調したい場合は最右カードに variant: "accent" / "pos" / "neg" を指定する運用とする。
-  addCardRow(
-    slide,
-    SLIDE.contentY,
-    spec.cards.map((c, i) => ({
-      x: SLIDE.marginX + (cardW + cardGapX) * i,
-      w: cardW,
-      title: c.title,
-      body: c.body,
-      opts: variantOpts(c.variant ?? "gray"),
-    }))
-  );
+  const cards = spec.cards.map((c, i) => ({
+    x: SLIDE.marginX + (cardW + cardGapX) * i,
+    w: cardW,
+    title: c.title,
+    body: c.body,
+    opts: variantOpts(c.variant ?? "gray"),
+  }));
+  addCardRow(slide, cardRowY(cards), cards);
 }
 
 // ================ 図形系 ================
