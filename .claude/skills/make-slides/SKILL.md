@@ -1,0 +1,93 @@
+---
+name: make-slides
+description: Generate a .pptx deck from a source file using this project's semantic-slot kind vocabulary (see README.md). Use when the user wants to build slides from a markdown/text/doc file AND has supplied (a) a path to the source file and (b) a prompt describing the desired granularity, audience, tone, and emphasis. The skill reads the source, designs the deck via the kind language defined in README.md, writes a deck-<slug>.js, runs renderer.js, and produces the .pptx.
+---
+
+# make-slides
+
+renderer.js / slide-kit.js / README.md からなる本プロジェクトの「セマンティック・スロット方式」スライド生成基盤を使い、情報源ファイルとプロンプトからスライドを 1 ショットで組み上げる。
+
+## 必須入力
+
+呼び出し時、ユーザは次の 2 つを必ず提供する。両方揃わない場合は **推測せず AskUserQuestion で確認すること**。
+
+1. **情報源ファイルのパス**: スライドの素材となる元資料（markdown / テキスト / 議事録 / 既存資料の text dump 等）
+2. **粒度プロンプト**: 以下を含む説明
+   - 何を主題とするか
+   - 何枚程度に分けたいか（または「お任せ」）
+   - 対象オーディエンス（社内エンジニア / 役員 / 顧客 等）
+   - トーン（中立的な事実報告 / 提案型 / レビュー依頼 等）
+   - 強調したいポイント（あれば）
+
+## 手順
+
+### 1. スキーマを必ず先に把握する
+
+`README.md` を読み、現行の kind 一覧・各 kind のフィールド定義・選定ガイド・表記ガイドを把握する。
+
+**README.md に無い kind を発明することは禁止**。レンダラ未対応の kind は出力時に「未実装」プレースホルダで描画されるため、必ず既存 kind のいずれかにマッピングする。
+
+### 2. 情報源を読む
+
+ユーザ指定のファイルを Read で読む。複数指定された場合は全部読む。大きすぎる場合は分割して読む。
+
+### 3. 構成を設計する
+
+粒度プロンプトに従い、スライドの順序・各スライドの kind・データ内容を決める。設計の基本原則:
+
+- **kind の選定は README.md の「kind を選ぶ判断ガイド」表に従う**
+- 表紙（`title-slide`）と章扉（`section-divider`）でセクション構造を作る
+- セクションのまとめ・全体の結論には `key-takeaway` を活用する
+- 「箇条書きで文字が多くなりがち」なポイントは図形系 kind（`flow-diagram` / `process-stages` / `matrix-2x2` / `pyramid`）に変換できないか検討する（README の警告サインも参照）
+- 比較は `comparison-2`、3 並列は `trio`、数値の対比は `data-table`
+
+### 4. deck ファイルを書く
+
+- **ファイル名**: `deck-<topic-slug>.js`
+  - `<topic-slug>` は情報源ファイル名から派生する（例: `meeting-notes.md` → `deck-meeting-notes.js`）
+  - ユーザが明示的に名前を指定したらそれを優先
+- **場所**: プロジェクトルート（`/Users/kazuya.horiuchi/git-private/ppt-ai-work/`）
+- **構造**: `README.md` の「deck.js の全体スキーマ」セクションに従って `module.exports = { meta, sections, slides }` を書く
+- **同名ファイルが既に存在する場合**: ユーザに上書き可否を AskUserQuestion で確認する
+
+#### 文字列の表記
+
+- CJK 全角句読点（`／` `「」` `（）` 等）は半角に置き換えない。情報源で使われている表記を尊重する。
+- 数値・固有名詞・引用は情報源にあるものだけ使う。**情報源に無い情報を補完で創作してはならない**。
+- 補完が必要な箇所は `[要確認: ...]` のようなプレースホルダで明示し、生成後の報告で列挙する。
+
+### 5. レンダラを実行
+
+```
+node renderer.js deck-<slug>.js deck-<slug>.pptx
+```
+
+エラーが出た場合は出力を読み、deck ファイルの構文エラー・必須フィールド漏れを修正してから再実行する。`要確認 (kind の名前)` のフッター表示が出る場合は kind 名のタイプミス（renderer 未対応 kind を指定している）。
+
+### 6. 結果を報告
+
+報告に含める情報:
+
+- 生成された `.pptx` のパス
+- 総スライド数とセクション構成の 1 行サマリ（例: `表紙 / イントロ / セクション A (4 枚) / セクション B (3 枚) / 結論 (2 枚)`）
+- 補完したプレースホルダ（`[要確認: ...]`）があれば、その箇所と理由
+- 図形 kind への変換を選んだ箇所があれば、元の情報源のどの記述から何の kind に落としたかを簡潔に説明
+
+## 禁止事項
+
+- **kind の発明**: README.md に列挙されていない kind 名を使わない
+- **renderer.js / slide-kit.js の編集**: 描画ロジックの変更が必要だと感じても本スキルからは変更しない。ユーザに別途相談する
+- **情報源にない情報の創作**: 数値・固有名詞・引用は元資料に書かれているもののみ使う
+- **未検証での完了報告**: `node renderer.js` が正常終了し、エラー無く `.pptx` が生成されたことを確認してから報告する
+
+## ファイル管理
+
+- 既存の `make-pptx.js` / `output.pptx` / `deck.example.js` / `deck.example.pptx` には触らない（これらは比較用・参照用に残してある）
+- 旧バージョンの deck を再生成する場合も、上書きせず別名にする選択肢をユーザに提示する
+- 生成された `.pptx` のパスは絶対パスで報告する
+
+## デバッグのヒント
+
+- 「`未実装の kind: X`」が描画される → spec の `kind` 名が renderer の switch case にマッチしていない。README で正しい kind 名を確認
+- フッターのセクション名が「要確認」と出る → `spec.section` の値が `deck.sections` のキーと一致していない
+- 図形系で要素が重なる / 切れる → 各 kind の README 制約（推奨件数・文字数上限）を超過している可能性。要素を減らすか別 kind に分解する
