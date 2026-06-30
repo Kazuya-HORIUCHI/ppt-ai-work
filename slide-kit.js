@@ -307,6 +307,102 @@ function addCardRow(slide, y, cards) {
   return rowH;
 }
 
+// ---------- キャプチャ風カード（タイトル帯 + 区切り線つきリスト） ----------
+//
+// 「Pricing Tiers」のような外観のカード。
+// - タイトルはアクセント色（青）背景の白文字で帯状に表示
+// - body は短文の items 配列のみ受け付ける（箇条書きマーカーは描画しない）
+// - items は 1 行で表示することを前提とする（折り返しは考慮しない）
+// - 各 item はカード幅で水平中央揃え
+// - item 間および空スロット間に薄いセパレータ線を入れる
+const CAPTURE_CARD = {
+  titleBarH: 0.55,
+  itemRowH: 0.55,
+  itemPadSide: 0.20,
+  separatorH: 0.008,
+};
+
+// items を 1 行ずつ並べる前提で、カード全体の高さを返す。
+function captureCardHeight(items) {
+  return CAPTURE_CARD.titleBarH + items.length * CAPTURE_CARD.itemRowH;
+}
+
+function addCaptureCard(slide, x, y, w, h, title, items) {
+  // タイトル帯（アクセント色背景・白文字）
+  slide.addShape(ShapeType.rect, {
+    x, y, w, h: CAPTURE_CARD.titleBarH,
+    fill: { color: COLORS.accent },
+    line: { type: "none" },
+  });
+  slide.addText(title, {
+    x, y, w, h: CAPTURE_CARD.titleBarH,
+    fontFace: FONT.body,
+    fontSize: TYPOGRAPHY.cardTitle.size,
+    bold: TYPOGRAPHY.cardTitle.bold,
+    color: "FFFFFF",
+    align: "center",
+    valign: "middle",
+  });
+
+  // ボディ領域（白背景 + 薄い枠線）
+  const bodyY = y + CAPTURE_CARD.titleBarH;
+  const bodyH = h - CAPTURE_CARD.titleBarH;
+  slide.addShape(ShapeType.rect, {
+    x, y: bodyY, w, h: bodyH,
+    fill: { color: COLORS.bg },
+    line: { color: COLORS.border, width: 0.5 },
+  });
+
+  // items は内側幅で水平中央揃え。
+  // pptxgenjs の既定 inset（左右計 ≈ 0.2 in）が実描画幅を削るため、
+  // margin: 0 で inset を打ち消し、innerW いっぱいをテキスト描画に使う。
+  const innerX = x + CAPTURE_CARD.itemPadSide;
+  const innerW = w - CAPTURE_CARD.itemPadSide * 2;
+
+  items.forEach((item, i) => {
+    const itemY = bodyY + i * CAPTURE_CARD.itemRowH;
+    slide.addText(item, {
+      x: innerX,
+      y: itemY,
+      w: innerW,
+      h: CAPTURE_CARD.itemRowH,
+      margin: 0,
+      fontFace: FONT.body,
+      fontSize: TYPOGRAPHY.cardBody.size,
+      color: COLORS.text,
+      align: "center",
+      valign: "middle",
+    });
+  });
+
+  // 区切り線は items 件数ではなく、行高から逆算したスロット数ぶん引く。
+  // 行の少ないカードと多いカードを横並びにすると、items 件数で打ち切ると
+  // 下部が間延びして見えるため、全スロット分まで線を引いて高さを揃える。
+  const slots = Math.round(bodyH / CAPTURE_CARD.itemRowH);
+  for (let i = 1; i < slots; i++) {
+    const sepY = bodyY + i * CAPTURE_CARD.itemRowH;
+    slide.addShape(ShapeType.rect, {
+      x: x + CAPTURE_CARD.itemPadSide,
+      y: sepY - CAPTURE_CARD.separatorH / 2,
+      w: w - CAPTURE_CARD.itemPadSide * 2,
+      h: CAPTURE_CARD.separatorH,
+      fill: { color: COLORS.border },
+      line: { type: "none" },
+    });
+  }
+}
+
+// 同一行のキャプチャ風カード群を、最大 item 数に合わせて同じ高さで描画する。
+// cards: [{ x, w, title, items }]
+function addCaptureCardRow(slide, y, cards) {
+  const maxItems = Math.max(...cards.map((c) => c.items.length));
+  const rowH = CAPTURE_CARD.titleBarH + maxItems * CAPTURE_CARD.itemRowH;
+  cards.forEach((c) => {
+    addCaptureCard(slide, c.x, y, c.w, rowH, c.title, c.items);
+  });
+  return rowH;
+}
+
 // TWO_COL の左右に2枚のカードを配置する糖衣構文。cards = [left, right]。
 function addTwoColRow(slide, y, cards) {
   return addCardRow(
@@ -392,17 +488,21 @@ module.exports = {
   TWO_COL,
   CARD,
   CARD_VARIANTS,
+  CAPTURE_CARD,
   TYPOGRAPHY,
   ShapeType,
   visualCharWidth,
   estimateBodyHeight,
   cardHeight,
+  captureCardHeight,
   addTitle,
   addFooter,
   addBullets,
   addCard,
   addCardRow,
   addTwoColRow,
+  addCaptureCard,
+  addCaptureCardRow,
   addTable,
   buildSectionDivider,
 };

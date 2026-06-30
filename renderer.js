@@ -14,15 +14,18 @@ const {
   CONTENT_W,
   TWO_COL,
   CARD_VARIANTS,
+  CAPTURE_CARD,
   TYPOGRAPHY,
   ShapeType,
   cardHeight,
+  captureCardHeight,
   addTitle,
   addFooter,
   addBullets,
   addCard,
   addCardRow,
   addTwoColRow,
+  addCaptureCardRow,
   addTable,
   buildSectionDivider,
 } = require("./slide-kit");
@@ -79,6 +82,7 @@ function dispatch(slide, spec) {
     case "data-table":      return renderDataTable(slide, spec);
     case "comparison-2":    return renderComparison2(slide, spec);
     case "trio":            return renderTrio(slide, spec);
+    case "capture-cards":   return renderCaptureCards(slide, spec);
     case "photo-card":      return renderPhotoCard(slide, spec);
     case "flow-diagram":    return renderFlowDiagram(slide, spec);
     case "process-stages":  return renderProcessStages(slide, spec);
@@ -294,6 +298,39 @@ function renderTrio(slide, spec) {
     opts: variantOpts(c.variant ?? "gray"),
   }));
   addCardRow(slide, cardRowY(cards), cards);
+}
+
+// 2〜3 枚の「キャプチャ風」カードを横並びで描画する。
+// 各カードはタイトル帯（青背景白文字）と、区切り線つきの items リストから成る。
+// items は水平中央揃え、カード間にセパレータ線が入る。
+function renderCaptureCards(slide, spec) {
+  addTitle(slide, spec.title, spec.message);
+  const n = spec.cards.length;
+  // 3 枚配置を基準に、カード幅は枚数によらず同じ値を使う。これにより
+  // 2 枚版でも各カードは 3 枚版と同じ字数上限になり、視覚的にも整う。
+  // 2 枚版のカード間隔は SLIDE.marginX (0.65 in) より少し狭い 0.55 in を
+  // 基準に 1.7 倍した 0.935 in を取り、カードはコンテンツ領域内で水平中央に
+  // 配置する。3 枚配置は左寄せで詰める。
+  const cardGapThree = 0.28;
+  const cardW = (CONTENT_W - cardGapThree * 2) / 3;
+  const cardGapX = n === 2 ? 0.935 : cardGapThree;
+  const totalW = cardW * n + cardGapX * (n - 1);
+  const startX = SLIDE.marginX + (CONTENT_W - totalW) / 2;
+  const cards = spec.cards.map((c, i) => ({
+    x: startX + (cardW + cardGapX) * i,
+    w: cardW,
+    title: c.title,
+    items: c.items,
+  }));
+  // 行の Y 位置は cardRowY と同じ判断: 既定は上から固定オフセット、
+  // 行高がコンテンツ領域の余白を超えるなら垂直中央寄せにフォールバックする。
+  const maxItems = Math.max(...spec.cards.map((c) => c.items.length));
+  const rowH = captureCardHeight(new Array(maxItems));
+  const slack = SLIDE.contentH - rowH;
+  const y = slack < 2 * CARD_TOP_GAP
+    ? SLIDE.contentY + Math.max(0, slack / 2)
+    : SLIDE.contentY + CARD_TOP_GAP;
+  addCaptureCardRow(slide, y, cards);
 }
 
 // ================ 写真系 ================
