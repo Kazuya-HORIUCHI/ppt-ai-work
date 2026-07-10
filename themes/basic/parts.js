@@ -1,158 +1,27 @@
-// themes/basic/slide-kit.js
-// pptxgenjs ベースのスライド構築用 共通定数・ヘルパー群（basic テーマ）。
-// 本ファイルは「資料の中身」には依存せず、レイアウト・配色・描画パーツのみを提供する。
+// themes/basic/parts.js
+// basic テーマの低レベル描画パーツ。
+// 「このテーマの見た目」を持つ描画ヘルパーと、パーツ寸法の計算関数を提供する。
+// deck.js の spec 構造は知らない（素の引数のみで動く）。spec の解釈は kinds/ 側の責務。
 
-const pptxgen = require("pptxgenjs");
+const {
+  COLORS,
+  FONT,
+  SLIDE,
+  CONTENT_W,
+  TWO_COL,
+  CARD,
+  PANEL_CARD,
+  PANEL_CARD_VARIANTS,
+  PANEL_BULLETS,
+  TYPOGRAPHY,
+} = require("./tokens");
+const tokens = require("./tokens");
+const { visualCharWidth, estimateBodyHeight: coreEstimateBodyHeight } = require("../../core/text-metrics");
+const { ShapeType } = require("../../core/engine");
 
-// pptxgenjs v4 では ShapeType がインスタンス側にしか公開されていないため、
-// モジュールロード時に空インスタンスを 1 つだけ生成して enum を取り出す。
-const ShapeType = new pptxgen().ShapeType;
-
-const COLORS = {
-  bg: "FFFFFF",
-  bgSubtle: "F9FAFB",
-  text: "111827",
-  subText: "4B5563",
-  accent: "2563EB",
-  accentLight: "EFF6FF",
-  border: "D1D5DB",
-  muted: "6B7280",
-  posBg: "ECFDF5",
-  posBorder: "10B981",
-  negBg: "FEF2F2",
-  negBorder: "EF4444",
-};
-
-const FONT = {
-  body: "Yu Gothic",
-};
-
-const SLIDE = {
-  width: 13.333,
-  height: 7.5,
-  marginX: 0.65,
-  titleY: 0.45,
-  titleH: 0.60,
-  accentLineY: 1.06,
-  accentLineH: 0.04,
-  messageY: 1.40,
-  messageH: 0.55,
-  contentY: 2.05,
-  contentH: 4.85,
-  footerY: 7.05,
-  footerH: 0.30,
-};
-
-const CONTENT_W = SLIDE.width - SLIDE.marginX * 2;
-
-// 標準的な2カード左右レイアウトの寸法（contentY 起点、各カードの高さは内容に応じて算出）
-const TWO_COL = {
-  leftX: SLIDE.marginX,
-  rightX: SLIDE.marginX + (CONTENT_W - 0.30) / 2 + 0.30,
-  colW: (CONTENT_W - 0.30) / 2,
-  y: SLIDE.contentY,
-};
-
-// カードの配色プリセット（addCard の opts に渡す）
-const CARD_VARIANTS = {
-  neg:    { fillColor: COLORS.negBg,       borderColor: COLORS.negBorder, titleColor: COLORS.negBorder },
-  pos:    { fillColor: COLORS.posBg,       borderColor: COLORS.posBorder, titleColor: COLORS.posBorder },
-  accent: { fillColor: COLORS.accentLight, borderColor: COLORS.accent,    titleColor: COLORS.accent    },
-  gray:   { fillColor: COLORS.bgSubtle,    borderColor: COLORS.border,    titleColor: COLORS.text      },
-};
-
-// カード／ボックスの内側余白・本文高さ推定パラメータ（幾何のみ）
-//
-// charWMultiplier:
-//   1 文字あたりの推定幅 = (fontSize / 72) * charWMultiplier (inches)。
-//   実描画（Yu Gothic, 12pt）で 1 行に収まる字数の実測上限と、
-//   Math.floor(usableW / charWIn) の結果が一致する最大値を逆算する:
-//     comparison-2 (usableW = 5.2065 in, 実測上限 29 字) → multiplier ≤ 5.2065 / 29 / (12/72) ≈ 1.0772
-//     trio        (usableW = 3.258 in,  実測上限 17 字) → multiplier ≤ 3.258  / 17 / (12/72) ≈ 1.1499
-//   comparison-2 側がより厳しい上限を課すため、その制約を満たす値として 1.07 を採用。
-//   trio 側は実測 17 字に対して formula は 18 字/行と算出する（やや楽観的）が、
-//   17 字ルールを README/SKILL で守らせている限りカード高の不足は発生しない。
-//   1.07 未満まで下げると、長い本文が想定外に 1 行扱いされ、カード高が不足するリスクが増える。
-const CARD = {
-  padTop: 0.22,
-  padBottom: 0.34,
-  padSide: 0.18,
-  titleH: 0.28,
-  titleBodyGap: 0.10,
-  bulletIndentIn: 0.30,
-  charWMultiplier: 1.07,
-  heightSafety: 1.05,
-};
-
-// 全テキスト要素のフォントサイズ・太さ・行送り・段落間隔を一元管理する。
-// size は pt、lineSpacing は倍率、paraSpaceAfterPt は pt 単位。
-const TYPOGRAPHY = {
-  // 各スライド上部
-  slideTitle:         { size: 23, bold: true },
-  slideMessage:       { size: 15, bold: true },
-  // フッター
-  footer:             { size: 9 },
-  // スライドに直貼りする箇条書き（カードに入らない場合）
-  slideBullet:        { size: 14, lineSpacing: 1.25, paraSpaceAfterPt: 8 },
-  // カード内
-  cardTitle:          { size: 13, bold: true },
-  cardBody:           { size: 12, lineSpacing: 1.3 },
-  cardBullet:         { size: 12, lineSpacing: 1.25, paraSpaceAfterPt: 8 },
-  // 表
-  tableBody:          { size: 11 },
-  // タイトルスライド
-  titleSlideEyebrow:  { size: 16, bold: true },
-  titleSlideHeading:  { size: 36, bold: true, lineSpacing: 1.2 },
-  titleSlideSubtitle: { size: 14 },
-  titleSlideMeta:     { size: 10 },
-  // セクション区切り
-  dividerLabel:       { size: 18, bold: true },
-  dividerTitle:       { size: 32, bold: true, lineSpacing: 1.2 },
-  // 補足注記（※ 行）
-  noteSmall:          { size: 10 },
-  noteMedium:         { size: 11 },
-  // 未実装プレースホルダ
-  todo:               { size: 18 },
-};
-
-// 1 文字の表示幅を「全角換算」で返す（全角=1.0, 半角=0.5）。
-// 判定は Unicode のブロック単位で、Yu Gothic / 一般的な CJK フォントで
-// 半角プロポーショナル描画される範囲を半角と見なす。
-function visualCharWidth(text) {
-  let v = 0;
-  for (const ch of String(text)) {
-    const code = ch.charCodeAt(0);
-    // ASCII（0x20-0x7E）、Latin-1 補助（× ÷ ° ± § © など）、Latin Extended-A/B、
-    // IPA 拡張、修飾文字、結合分音記号、ギリシャ、キリル、ヘブライ、アラビア。
-    if (code <= 0x07FF) v += 0.5;
-    // 半角カナ／半角ハングル等の Halfwidth Forms
-    else if (code >= 0xFF61 && code <= 0xFFDC) v += 0.5;
-    // それ以外は全角扱い（CJK 漢字／かな／全角形／全角記号など）
-    else v += 1.0;
-  }
-  return v;
-}
-
+// core/text-metrics の推定式に basic テーマの tokens を束縛したもの。
 function estimateBodyHeight(body, innerW) {
-  const style = Array.isArray(body) ? TYPOGRAPHY.cardBullet : TYPOGRAPHY.cardBody;
-  const charWIn = (style.size / 72) * CARD.charWMultiplier;
-  if (Array.isArray(body)) {
-    const usableW = Math.max(0.5, innerW - CARD.bulletIndentIn);
-    const charsPerLine = Math.max(1, Math.floor(usableW / charWIn));
-    let totalLines = 0;
-    for (const text of body) {
-      const v = visualCharWidth(text);
-      totalLines += Math.max(1, Math.ceil(v / charsPerLine));
-    }
-    const lineH = (style.size / 72) * style.lineSpacing;
-    const paraSpace = (style.paraSpaceAfterPt / 72) * body.length;
-    return (totalLines * lineH + paraSpace) * CARD.heightSafety;
-  }
-  const charsPerLine = Math.max(1, Math.floor(innerW / charWIn));
-  const v = visualCharWidth(body);
-  const lines = Math.max(1, Math.ceil(v / charsPerLine));
-  const lineH = (style.size / 72) * style.lineSpacing;
-  return lines * lineH * CARD.heightSafety;
+  return coreEstimateBodyHeight(body, innerW, tokens);
 }
 
 function cardHeight(title, body, w) {
@@ -226,6 +95,14 @@ function addFooter(slide, pageNumber, totalPages, sectionLabel) {
     fontSize: TYPOGRAPHY.footer.size,
     color: COLORS.muted,
     align: "right",
+  });
+}
+
+// engine が未登録 kind に遭遇したときのフォールバック描画。
+function addUnimplementedPlaceholder(slide, kindName) {
+  slide.addText(`未実装の kind: ${kindName}`, {
+    x: 1, y: 3, w: 11, h: 1,
+    fontFace: FONT.body, fontSize: TYPOGRAPHY.todo.size, color: COLORS.negBorder,
   });
 }
 
@@ -308,6 +185,19 @@ function addCardRow(slide, y, cards) {
   return rowH;
 }
 
+// TWO_COL の左右に2枚のカードを配置する糖衣構文。cards = [left, right]。
+function addTwoColRow(slide, y, cards) {
+  return addCardRow(
+    slide,
+    y,
+    cards.map((c, i) => ({
+      x: i === 0 ? TWO_COL.leftX : TWO_COL.rightX,
+      w: TWO_COL.colW,
+      ...c,
+    }))
+  );
+}
+
 // ---------- 見出し帯付きパネルカード（タイトル帯 + 区切り線つきリスト） ----------
 //
 // 「Pricing Tiers」「pros/cons」「観点別ラベル」のような外観のカード。
@@ -316,20 +206,6 @@ function addCardRow(slide, y, cards) {
 // - items は 1 行で表示することを前提とする（折り返しは考慮しない）
 // - 各 item はカード幅で水平中央揃え
 // - item 間および空スロット間に薄いセパレータ線を入れる
-const PANEL_CARD = {
-  titleBarH: 0.55,
-  itemRowH: 0.55,
-  itemPadSide: 0.20,
-  separatorH: 0.008,
-};
-
-// panel-card のカラー variant。タイトル帯と本文枠線をセットで切り替える。
-// 既定は accent（テーマ青）。pos / neg は comparison-2 と同じ色味を流用する。
-const PANEL_CARD_VARIANTS = {
-  accent: { titleBarColor: COLORS.accent,    bodyBorderColor: COLORS.border },
-  pos:    { titleBarColor: COLORS.posBorder, bodyBorderColor: COLORS.posBorder },
-  neg:    { titleBarColor: COLORS.negBorder, bodyBorderColor: COLORS.negBorder },
-};
 
 // items を 1 行ずつ並べる前提で、カード全体の高さを返す。
 function panelCardHeight(items) {
@@ -424,20 +300,6 @@ function addPanelCardRow(slide, y, cards) {
 // フォントサイズは TYPOGRAPHY.cardBody (12pt) の約 1.1 倍として 13pt を使う
 // （PANEL_BULLETS.itemFontSize）。文字数上限は panel-cards と同じ運用とし、超過時の
 // レイアウト破綻リスクも panel-cards と同等とする。
-//
-// bodyPadY:
-//   ボディ領域の上下に取るパディング。無指定だと最上段・最下段の item が
-//   カード上下端に張り付いて見えるため、行間と同じ量（itemRowH / 2）を確保する。
-//   カード高は panelBulletsCardHeight で titleBarH + bodyPadY * 2 + n * itemRowH。
-//
-// bulletGapCharUnits:
-//   ◆ + 字間スペースを何字ぶんとして見積もるか（bullet 幅を字幅の何倍とみなすか）。
-//   実描画で行頭中央寄せ位置を安定させるため、常に 2 字換算で確保する。
-const PANEL_BULLETS = {
-  itemFontSize: 13,
-  bodyPadY: 0.275, // = PANEL_CARD.itemRowH / 2
-  bulletGapCharUnits: 2,
-};
 
 // items を 1 行ずつ並べる panel-bullets 用のカード高。
 // panel-cards との差分は bodyPadY * 2（上下パディング）だけ。
@@ -530,19 +392,6 @@ function addPanelBulletsCardRow(slide, y, cards) {
   return rowH;
 }
 
-// TWO_COL の左右に2枚のカードを配置する糖衣構文。cards = [left, right]。
-function addTwoColRow(slide, y, cards) {
-  return addCardRow(
-    slide,
-    y,
-    cards.map((c, i) => ({
-      x: i === 0 ? TWO_COL.leftX : TWO_COL.rightX,
-      w: TWO_COL.colW,
-      ...c,
-    }))
-  );
-}
-
 function addTable(slide, header, rows, x, y, w, opts = {}) {
   const fontSize = opts.fontSize || TYPOGRAPHY.tableBody.size;
   const headerRow = header.map((cell) => ({
@@ -608,25 +457,13 @@ function buildSectionDivider(slide, label, title) {
 }
 
 module.exports = {
-  COLORS,
-  FONT,
-  SLIDE,
-  CONTENT_W,
-  TWO_COL,
-  CARD,
-  CARD_VARIANTS,
-  PANEL_CARD,
-  PANEL_CARD_VARIANTS,
-  PANEL_BULLETS,
-  TYPOGRAPHY,
-  ShapeType,
-  visualCharWidth,
   estimateBodyHeight,
   cardHeight,
   panelCardHeight,
   panelBulletsCardHeight,
   addTitle,
   addFooter,
+  addUnimplementedPlaceholder,
   addBullets,
   addCard,
   addCardRow,
