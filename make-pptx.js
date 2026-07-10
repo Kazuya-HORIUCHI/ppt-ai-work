@@ -22,7 +22,7 @@ const {
   addTwoColRow,
   addTable,
   buildSectionDivider,
-} = require("./slide-kit");
+} = require("./themes/basic/slide-kit");
 
 // ---------- スライド種別 ----------
 function buildTitleSlide(slide) {

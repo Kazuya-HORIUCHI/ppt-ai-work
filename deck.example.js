@@ -2,7 +2,7 @@
 // 全 12 kind を網羅したサンプル deck。renderer の動作確認と
 // 各 kind のフィールド埋め方のリファレンスを兼ねる。
 //
-// 実行: node renderer.js deck.example.js deck.example.pptx
+// 実行: node themes/basic/renderer.js deck.example.js deck.example.pptx
 
 module.exports = {
   meta: {
@@ -315,6 +315,58 @@ module.exports = {
             "ストレージ 100GB",
             "上限文字数十七字の全角ラベル例示用", // 17
             "月額 9,800 円 年間契約",
+          ],
+        },
+      ],
+    },
+
+    {
+      kind: "panel-bullets",
+      section: "compare",
+      title: "kind: panel-bullets ─ trio と同一内容（3 枚）",
+      message:
+        "panel-cards と同じ枠組み（タイトル帯・区切り線・カード配置）で、items を菱形マーカー付き箇条書きに差し替えたバージョン。trio の「速度 / 品質 / コスト」を流用。",
+      cards: [
+        {
+          title: "観点 1: 速度",
+          items: ["立ち上げが早い", "市場投入が早い", "PoC で検証しやすい"],
+        },
+        {
+          title: "観点 2: 品質",
+          items: ["保守容易性が高い", "テストカバレッジ確保", "障害復旧時間が短い"],
+        },
+        {
+          title: "観点 3: コスト",
+          items: ["初期投資が小さい", "運用負荷が低い", "段階的な拡張が可能"],
+        },
+      ],
+    },
+
+    {
+      kind: "panel-bullets",
+      section: "compare",
+      title: "kind: panel-bullets ─ comparison-2 と同一内容（2 枚, pos/neg）",
+      message:
+        "comparison-2 の「良い側面 / 懸念点」を panel-bullets で描いた版。タイトル帯と本文枠線の色は variant で切り替わる。",
+      cards: [
+        {
+          title: "良い側面",
+          variant: "pos",
+          items: [
+            "学習コストが低い",
+            "既存システムと衝突しない",
+            "段階的に導入できる",
+          ],
+        },
+        {
+          title: "懸念点",
+          variant: "neg",
+          items: [
+            "長期メンテで属人化しやすい",
+            "他資料との表現が不揃いになる",
+            "コーポレートテーマの刷新時に追従が困難",
+            "レビュー時のチェックポイントが増える",
+            "障害発生時の原因切り分けが難しくなる",
           ],
         },
       ],

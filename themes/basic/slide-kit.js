@@ -1,4 +1,5 @@
-// pptxgenjs ベースのスライド構築用 共通定数・ヘルパー群。
+// themes/basic/slide-kit.js
+// pptxgenjs ベースのスライド構築用 共通定数・ヘルパー群（basic テーマ）。
 // 本ファイルは「資料の中身」には依存せず、レイアウト・配色・描画パーツのみを提供する。
 
 const pptxgen = require("pptxgenjs");
@@ -412,6 +413,123 @@ function addPanelCardRow(slide, y, cards) {
   return rowH;
 }
 
+// ---------- 見出し帯付きパネルカード（箇条書きバージョン） ----------
+//
+// panel-cards のレイアウト・寸法・variant 体系をそのまま流用し、items の表示だけを
+// 「菱形マーカー付きの左寄せ箇条書き」（comparison-2 等と同じ表現）に差し替えたバージョン。
+// 1 item = 1 行（panel-cards と同じ itemRowH ぶんの行高）を前提とし、各行はカードの
+// 内側左端から描画する。区切り線・タイトル帯・本文枠線・全スロット分のセパレータは
+// panel-cards と同じ仕様で出る。
+//
+// フォントサイズは TYPOGRAPHY.cardBody (12pt) の約 1.1 倍として 13pt を使う
+// （PANEL_BULLETS.itemFontSize）。文字数上限は panel-cards と同じ運用とし、超過時の
+// レイアウト破綻リスクも panel-cards と同等とする。
+//
+// bodyPadY:
+//   ボディ領域の上下に取るパディング。無指定だと最上段・最下段の item が
+//   カード上下端に張り付いて見えるため、行間と同じ量（itemRowH / 2）を確保する。
+//   カード高は panelBulletsCardHeight で titleBarH + bodyPadY * 2 + n * itemRowH。
+//
+// bulletGapCharUnits:
+//   ◆ + 字間スペースを何字ぶんとして見積もるか（bullet 幅を字幅の何倍とみなすか）。
+//   実描画で行頭中央寄せ位置を安定させるため、常に 2 字換算で確保する。
+const PANEL_BULLETS = {
+  itemFontSize: 13,
+  bodyPadY: 0.275, // = PANEL_CARD.itemRowH / 2
+  bulletGapCharUnits: 2,
+};
+
+// items を 1 行ずつ並べる panel-bullets 用のカード高。
+// panel-cards との差分は bodyPadY * 2（上下パディング）だけ。
+function panelBulletsCardHeight(items) {
+  return (
+    PANEL_CARD.titleBarH +
+    PANEL_BULLETS.bodyPadY * 2 +
+    items.length * PANEL_CARD.itemRowH
+  );
+}
+
+function addPanelBulletsCard(slide, x, y, w, h, title, items, opts = {}) {
+  const variant = PANEL_CARD_VARIANTS[opts.variant] || PANEL_CARD_VARIANTS.accent;
+  // タイトル帯（panel-cards と同じ）
+  slide.addShape(ShapeType.rect, {
+    x, y, w, h: PANEL_CARD.titleBarH,
+    fill: { color: variant.titleBarColor },
+    line: { type: "none" },
+  });
+  slide.addText(title, {
+    x, y, w, h: PANEL_CARD.titleBarH,
+    fontFace: FONT.body,
+    fontSize: TYPOGRAPHY.cardTitle.size,
+    bold: TYPOGRAPHY.cardTitle.bold,
+    color: "FFFFFF",
+    align: "center",
+    valign: "middle",
+  });
+
+  // ボディ領域（panel-cards と同じ枠線・背景）
+  const bodyY = y + PANEL_CARD.titleBarH;
+  const bodyH = h - PANEL_CARD.titleBarH;
+  slide.addShape(ShapeType.rect, {
+    x, y: bodyY, w, h: bodyH,
+    fill: { color: COLORS.bg },
+    line: { color: variant.bodyBorderColor, width: 0.5 },
+  });
+
+  // 行頭位置の計算:
+  //   そのカード内で最長の item の「bullet + テキスト」の視覚幅を見積もり、その
+  //   ブロックがカード幅で左右中央に来る位置を、全 item 共通の x として使う。
+  //   これにより全 item の bullet 列が垂直に揃い、最長の行が見た目上カード中央に
+  //   くる。短い item は同じ x から始まり、右側に余白ができる。
+  //
+  //   bullet + 字間スペースは常に「全角 2 字相当」で見積もる（bulletGapCharUnits）。
+  //   実描画の bullet 幅 + tab 幅がフォント・レンダラによって揺れるため、余裕を持って
+  //   2 字換算にすることで、短い item でも視覚的な中央寄せがずれにくくなる。
+  const charWidthIn = (PANEL_BULLETS.itemFontSize / 72) * CARD.charWMultiplier;
+  const bulletGapIn = charWidthIn * PANEL_BULLETS.bulletGapCharUnits;
+  const maxChars = Math.max(...items.map((it) => visualCharWidth(it)));
+  const longestVisualW = bulletGapIn + maxChars * charWidthIn;
+  const innerLeft = x + PANEL_CARD.itemPadSide;
+  const innerRight = x + w - PANEL_CARD.itemPadSide;
+  // 中央寄せ位置がカード内側左端より外側になる場合は左端でクランプ（最長 item が
+  // カード幅を埋めるケース）。テキスト幅も右内側端まで使えるように広げる。
+  const centerX = x + (w - longestVisualW) / 2;
+  const textX = Math.max(innerLeft, centerX);
+  const textW = Math.max(longestVisualW, innerRight - textX);
+
+  // 上下端の item がカード上下端と近接して見えるのを避けるため、行間と同じ量
+  // （PANEL_BULLETS.bodyPadY = itemRowH / 2）だけ ボディ内側から下げて配置する。
+  const itemsTop = bodyY + PANEL_BULLETS.bodyPadY;
+  items.forEach((item, i) => {
+    const itemY = itemsTop + i * PANEL_CARD.itemRowH;
+    slide.addText(
+      [{ text: item, options: { bullet: { code: "25C6" }, indent: 0 } }],
+      {
+        x: textX,
+        y: itemY,
+        w: textW,
+        h: PANEL_CARD.itemRowH,
+        margin: 0,
+        fontFace: FONT.body,
+        fontSize: PANEL_BULLETS.itemFontSize,
+        color: COLORS.text,
+        valign: "middle",
+      }
+    );
+  });
+}
+
+// 同一行のパネルカード（箇条書き版）群を、最大 item 数に合わせて同じ高さで描画する。
+// cards: [{ x, w, title, items, variant? }]
+function addPanelBulletsCardRow(slide, y, cards) {
+  const maxItems = Math.max(...cards.map((c) => c.items.length));
+  const rowH = panelBulletsCardHeight(new Array(maxItems));
+  cards.forEach((c) => {
+    addPanelBulletsCard(slide, c.x, y, c.w, rowH, c.title, c.items, { variant: c.variant });
+  });
+  return rowH;
+}
+
 // TWO_COL の左右に2枚のカードを配置する糖衣構文。cards = [left, right]。
 function addTwoColRow(slide, y, cards) {
   return addCardRow(
@@ -499,12 +617,14 @@ module.exports = {
   CARD_VARIANTS,
   PANEL_CARD,
   PANEL_CARD_VARIANTS,
+  PANEL_BULLETS,
   TYPOGRAPHY,
   ShapeType,
   visualCharWidth,
   estimateBodyHeight,
   cardHeight,
   panelCardHeight,
+  panelBulletsCardHeight,
   addTitle,
   addFooter,
   addBullets,
@@ -513,6 +633,8 @@ module.exports = {
   addTwoColRow,
   addPanelCard,
   addPanelCardRow,
+  addPanelBulletsCard,
+  addPanelBulletsCardRow,
   addTable,
   buildSectionDivider,
 };

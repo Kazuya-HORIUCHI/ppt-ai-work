@@ -1,6 +1,6 @@
-// renderer.js
-// セマンティック・スロット方式のスライド生成レンダラ。
-// 使い方: node renderer.js <deck.js> <out.pptx>
+// themes/basic/renderer.js
+// セマンティック・スロット方式のスライド生成レンダラ（basic テーマ）。
+// 使い方: node themes/basic/renderer.js <deck.js> <out.pptx>
 //
 // deck.js は { meta, sections, slides } を CommonJS export する。
 // 各 slide は { kind, ... } の宣言データ。kind 一覧と各スキーマは README.md を参照。
@@ -19,6 +19,8 @@ const {
   ShapeType,
   cardHeight,
   panelCardHeight,
+  panelBulletsCardHeight,
+  PANEL_BULLETS,
   visualCharWidth,
   addTitle,
   addFooter,
@@ -27,6 +29,7 @@ const {
   addCardRow,
   addTwoColRow,
   addPanelCardRow,
+  addPanelBulletsCardRow,
   addTable,
   buildSectionDivider,
 } = require("./slide-kit");
@@ -34,7 +37,7 @@ const {
 // ---------------- CLI ----------------
 const [, , deckArg, outArg] = process.argv;
 if (!deckArg || !outArg) {
-  console.error("Usage: node renderer.js <deck.js> <out.pptx>");
+  console.error("Usage: node themes/basic/renderer.js <deck.js> <out.pptx>");
   process.exit(1);
 }
 const deck = require(path.resolve(deckArg));
@@ -84,6 +87,7 @@ function dispatch(slide, spec) {
     case "comparison-2":    return renderComparison2(slide, spec);
     case "trio":            return renderTrio(slide, spec);
     case "panel-cards":     return renderPanelCards(slide, spec);
+    case "panel-bullets":   return renderPanelBullets(slide, spec);
     case "photo-card":      return renderPhotoCard(slide, spec);
     case "flow-diagram":    return renderFlowDiagram(slide, spec);
     case "process-stages":  return renderProcessStages(slide, spec);
@@ -301,55 +305,93 @@ function renderTrio(slide, spec) {
   addCardRow(slide, cardRowY(cards), cards);
 }
 
-// 2〜3 枚の「見出し帯付きパネル」カードを横並びで描画する。
-// 各カードはタイトル帯（variant 色背景・白文字）と、区切り線つきの items リスト
-// から成る。items は水平中央揃え、カード間にセパレータ線が入る。
-function renderPanelCards(slide, spec) {
-  addTitle(slide, spec.title, spec.message);
-  const n = spec.cards.length;
-  // 3 枚配置を基準に、カード幅は枚数によらず同じ値を使う。これにより
-  // 2 枚版でも各カードは 3 枚版と同じ字数上限になり、視覚的にも整う。
-  // 2 枚版のカード間隔は SLIDE.marginX (0.65 in) より少し狭い 0.55 in を
-  // 基準に 1.7 倍した 0.935 in を取り、カードはコンテンツ領域内で水平中央に
-  // 配置する。3 枚配置は左寄せで詰める。
+// panel-cards / panel-bullets 共通の 2/3 枚配置ロジック。
+//
+// 3 枚配置を基準に、カード幅は枚数によらず同じ値を使う。これにより 2 枚版でも
+// 各カードは 3 枚版と同じ字数上限になり、視覚的にも整う。2 枚版のカード間隔は
+// SLIDE.marginX (0.65 in) より少し狭い 0.55 in を基準に 1.7 倍した 0.935 in を
+// 取り、カードはコンテンツ領域内で水平中央に配置する。3 枚配置は左寄せで詰める。
+//
+// 2 枚配置のみ、最長 item が 17 字を超えたら cardW を伸ばす。1 全角 = 0.192 in
+// (trio worst-case) を基準に必要な innerW を求め、cardW = innerW + 2 × itemPadSide。
+// コンテンツ領域内に収まる最大値で頭打ち。3 枚配置 / 17 字以内の 2 枚配置は
+// defaultCardW を使う。
+//
+// opts (panel-bullets 用):
+//   extraChars: bullet + gap ぶんの余裕を全角字数で上乗せする（既定 0）
+//   emPerChar:  1 全角字の in 幅（既定 0.192, panel-cards の 12pt worst-case）
+function panelRowLayout(specCards, opts = {}) {
+  const extraChars = opts.extraChars || 0;
+  const emPerChar = opts.emPerChar || 0.192;
+  const n = specCards.length;
   const cardGapThree = 0.28;
   const defaultCardW = (CONTENT_W - cardGapThree * 2) / 3;
   const cardGapX = n === 2 ? 0.935 : cardGapThree;
-  // 2 枚配置のみ、最長 item が 17 字を超えたら cardW を伸ばす。
-  // 1 全角 = 0.192 in (trio worst-case) を基準に必要な innerW を求め、
-  // cardW = innerW + 2 × itemPadSide。コンテンツ領域内に収まる最大値で頭打ち。
-  // 3 枚配置 / 17 字以内の 2 枚配置は defaultCardW を使う。
   const DEFAULT_THRESHOLD_CHARS = 17;
-  const PANEL_CARD_EM = 0.192;
   let cardW = defaultCardW;
   if (n === 2) {
     const maxChars = Math.max(
-      ...spec.cards.flatMap((c) => c.items.map(visualCharWidth))
+      ...specCards.flatMap((c) => c.items.map(visualCharWidth))
     );
-    if (maxChars > DEFAULT_THRESHOLD_CHARS) {
-      const requiredW = maxChars * PANEL_CARD_EM + PANEL_CARD.itemPadSide * 2;
+    const effectiveChars = maxChars + extraChars;
+    if (effectiveChars > DEFAULT_THRESHOLD_CHARS) {
+      const requiredW = effectiveChars * emPerChar + PANEL_CARD.itemPadSide * 2;
       const maxCardW = (CONTENT_W - cardGapX) / 2;
       cardW = Math.min(maxCardW, Math.max(defaultCardW, requiredW));
     }
   }
   const totalW = cardW * n + cardGapX * (n - 1);
   const startX = SLIDE.marginX + (CONTENT_W - totalW) / 2;
-  const cards = spec.cards.map((c, i) => ({
+  return specCards.map((c, i) => ({
     x: startX + (cardW + cardGapX) * i,
     w: cardW,
     title: c.title,
     items: c.items,
     variant: c.variant,
   }));
-  // 行の Y 位置は cardRowY と同じ判断: 既定は上から固定オフセット、
-  // 行高がコンテンツ領域の余白を超えるなら垂直中央寄せにフォールバックする。
-  const maxItems = Math.max(...spec.cards.map((c) => c.items.length));
-  const rowH = panelCardHeight(new Array(maxItems));
+}
+
+// panel-cards / panel-bullets 共通の行 Y 位置決定ロジック。
+// 既定は上から固定オフセット (CARD_TOP_GAP)、行高がコンテンツ領域の余白を超える
+// なら垂直中央寄せにフォールバックする（cardRowY と同じ判断）。rowH は kind ごとの
+// カード高計算関数（panelCardHeight / panelBulletsCardHeight）から渡す。
+function panelRowY(rowH) {
   const slack = SLIDE.contentH - rowH;
-  const y = slack < 2 * CARD_TOP_GAP
+  return slack < 2 * CARD_TOP_GAP
     ? SLIDE.contentY + Math.max(0, slack / 2)
     : SLIDE.contentY + CARD_TOP_GAP;
-  addPanelCardRow(slide, y, cards);
+}
+
+// 2〜3 枚の「見出し帯付きパネル」カードを横並びで描画する。
+// 各カードはタイトル帯（variant 色背景・白文字）と、区切り線つきの items リスト
+// から成る。items は水平中央揃え、カード間にセパレータ線が入る。
+function renderPanelCards(slide, spec) {
+  addTitle(slide, spec.title, spec.message);
+  const cards = panelRowLayout(spec.cards);
+  const maxItems = Math.max(...spec.cards.map((c) => c.items.length));
+  const rowH = panelCardHeight(new Array(maxItems));
+  addPanelCardRow(slide, panelRowY(rowH), cards);
+}
+
+// panel-cards の箇条書き版。レイアウト・寸法・variant・行高は panel-cards と
+// 共有し、items の表示だけを菱形マーカー付き箇条書きに差し替える。
+// フォントサイズは TYPOGRAPHY.cardBody (12pt) の約 1.1 倍として 13pt を使う。
+//
+// 2 枚配置の自動拡大には次の 2 点を上乗せして渡す:
+//   - extraChars: bullet + gap ぶんの余裕を PANEL_BULLETS.bulletGapCharUnits 分
+//     加算し、テキストだけでなく bullet 部分もカード幅に組み込む
+//   - emPerChar:  panel-cards の 12pt worst-case (0.192) を font size 比で
+//     13pt にスケールした値。実描画時の 1 全角字幅 (charWidthIn = 0.193) より
+//     わずかに大きく、centering に必要な左右の空きを生む
+function renderPanelBullets(slide, spec) {
+  addTitle(slide, spec.title, spec.message);
+  const cards = panelRowLayout(spec.cards, {
+    extraChars: PANEL_BULLETS.bulletGapCharUnits,
+    emPerChar: 0.192 * (PANEL_BULLETS.itemFontSize / 12),
+  });
+  const maxItems = Math.max(...spec.cards.map((c) => c.items.length));
+  const rowH = panelBulletsCardHeight(new Array(maxItems));
+  addPanelBulletsCardRow(slide, panelRowY(rowH), cards);
 }
 
 // ================ 写真系 ================

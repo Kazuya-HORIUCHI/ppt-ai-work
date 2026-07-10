@@ -2,7 +2,7 @@
 // 情報源: docs/deep-research.md
 // 粒度: 見出し2 (##) ごとに 1 スライド。見出し1 (#) は section-divider として配置する。
 //
-// 実行: node renderer.js deck-deep-research.js deck-deep-research.pptx
+// 実行: node themes/basic/renderer.js deck-deep-research.js deck-deep-research.pptx
 
 module.exports = {
   meta: {
