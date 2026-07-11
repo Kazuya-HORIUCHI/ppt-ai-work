@@ -420,6 +420,23 @@ module.exports = {
     },
 
     {
+      kind: "flow-diagram",
+      section: "diagram",
+      title: "kind: flow-diagram ─ U ターン配置（5 ステップ以上）",
+      message: "steps が 5 個以上になると 2 列の U ターン配置になる。最大 8 個。",
+      steps: [
+        { label: "要件整理", description: "目的とスコープを確定" },
+        { label: "情報源収集", description: "元資料・メモを揃える" },
+        { label: "構成設計", description: "kind へのマッピング" },
+        { label: "deck.js 生成", description: "宣言データを書き出す" },
+        { label: "レンダリング", description: "renderer で pptx 化" },
+        { label: "目視確認", description: "崩れ・過密をチェック" },
+        { label: "修正反映", description: "deck.js を調整して再生成" },
+        { label: "共有", description: "完成版を配布" },
+      ],
+    },
+
+    {
       kind: "process-stages",
       section: "diagram",
       title: "kind: process-stages ─ 番号付き工程",

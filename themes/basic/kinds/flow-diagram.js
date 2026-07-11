@@ -11,8 +11,8 @@ const { addTitle } = require("../parts");
 const { drawLabeledBox } = require("./_shared");
 const { ShapeType } = require("../../../core/engine");
 
-// ボックス高。従来の 2.0 in から 20% 縮小した値。
-const BOX_H = 1.6;
+// ボックス高。従来の 2.0 in から 20% 縮小 → さらに 10% 縮小した値（2.0 × 0.8 × 0.9）。
+const BOX_H = 1.44;
 // コンテンツ領域の空き（contentH - 使用高）を上下に配分する際の上側比率。
 // 従来レイアウト（top 1.2 / bottom 1.65、空き 2.85）の比率を維持する。
 const TOP_RATIO = 1.2 / 2.85;
