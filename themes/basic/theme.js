@@ -14,6 +14,7 @@ module.exports = {
     "section-divider": require("./kinds/section-divider"),
     // テキスト系
     "bullets":         require("./kinds/bullets"),
+    "list-rows":       require("./kinds/list-rows"),
     "key-takeaway":    require("./kinds/key-takeaway"),
     "data-table":      require("./kinds/data-table"),
     // 比較系

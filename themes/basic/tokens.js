@@ -127,6 +127,9 @@ const TYPOGRAPHY = {
   footer:             { size: 9 },
   // スライドに直貼りする箇条書き（カードに入らない場合）
   slideBullet:        { size: 14, lineSpacing: 1.25, paraSpaceAfterPt: 8 },
+  // list-rows の行テキストと、アクセントブロック内の連番
+  listRow:            { size: 16 },
+  listRowNumber:      { size: 20, bold: true },
   // カード内
   cardTitle:          { size: 13, bold: true },
   cardBody:           { size: 12, lineSpacing: 1.3 },
