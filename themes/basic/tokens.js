@@ -106,14 +106,21 @@ const PANEL_CARD_VARIANTS = {
 //
 // bodyPadY:
 //   ボディ領域の上下に取るパディング。無指定だと最上段・最下段の item が
-//   カード上下端に張り付いて見えるため、行間と同じ量（itemRowH / 2）を確保する。
+//   カード上下端に張り付いて見えるため、行間相当（itemRowH / 2）を基準に確保する。
+//   基準値 0.275 から 10% 縮小した値を使う。
+//
+// itemPadLeft:
+//   行頭（bullet 列）の左余白。カード共通の itemPadSide (0.20) の 2 倍。
+//   右余白は itemPadSide のまま。
 //
 // bulletGapCharUnits:
 //   ◆ + 字間スペースを何字ぶんとして見積もるか（bullet 幅を字幅の何倍とみなすか）。
-//   実描画で行頭中央寄せ位置を安定させるため、常に 2 字換算で確保する。
+//   2 枚配置のカード幅自動拡大で、テキストだけでなく bullet 部分の幅も
+//   織り込むために使う。
 const PANEL_BULLETS = {
   itemFontSize: 13,
-  bodyPadY: 0.275, // = PANEL_CARD.itemRowH / 2
+  bodyPadY: 0.2475, // = PANEL_CARD.itemRowH / 2 (0.275) × 0.9
+  itemPadLeft: 0.40, // = PANEL_CARD.itemPadSide × 2
   bulletGapCharUnits: 2,
 };
 

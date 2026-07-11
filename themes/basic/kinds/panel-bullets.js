@@ -6,8 +6,8 @@
 //   - extraChars: bullet + gap ぶんの余裕を PANEL_BULLETS.bulletGapCharUnits 分
 //     加算し、テキストだけでなく bullet 部分もカード幅に組み込む
 //   - emPerChar:  panel-cards の 12pt worst-case (0.192) を font size 比で
-//     13pt にスケールした値。実描画時の 1 全角字幅 (charWidthIn = 0.193) より
-//     わずかに大きく、centering に必要な左右の空きを生む
+//     13pt にスケールした値。実描画時の 1 全角字幅 (≈ 0.193) よりわずかに
+//     大きく、折り返しを起こさない側に倒した見積もりになる
 const { PANEL_BULLETS } = require("../tokens");
 const { addTitle, addPanelBulletsCardRow, panelBulletsCardHeight } = require("../parts");
 const { panelRowLayout, panelRowY } = require("./_shared");

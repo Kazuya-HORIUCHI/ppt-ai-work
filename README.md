@@ -455,7 +455,7 @@ module.exports = {
 スキーマ・制約・variant の指定方法・2/3 枚配置の挙動は [`panel-cards`](#panel-cards) と同一。差分は次の 3 点のみ。
 
 - items は菱形マーカー (`◆`) 付きの箇条書きとして描画される。`panel-cards` のような水平中央揃えと区切り線は持たない
-- 行頭位置は「そのカード内で最長の item を bullet 含めて左右中央寄せにした位置」。全 item の bullet 列はその x に揃う。最長 item が中央に来る一方、短い item は同じ行頭から始まり右側に余白ができる
+- 行頭はカード内側の左端に揃う（左余白 0.40 in / 右余白 0.20 in）。全 item の bullet 列はその x に垂直に揃う
 - フォントサイズは `cardBody` (12pt) の約 1.1 倍として **13pt** を使う。行高は `panel-cards` と同じ `itemRowH (0.55 in)`
 
 **`panel-cards` との使い分け**

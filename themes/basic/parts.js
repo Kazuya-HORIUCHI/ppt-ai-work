@@ -16,7 +16,7 @@ const {
   TYPOGRAPHY,
 } = require("./tokens");
 const tokens = require("./tokens");
-const { visualCharWidth, estimateBodyHeight: coreEstimateBodyHeight } = require("../../core/text-metrics");
+const { estimateBodyHeight: coreEstimateBodyHeight } = require("../../core/text-metrics");
 const { ShapeType } = require("../../core/engine");
 
 // core/text-metrics の推定式に basic テーマの tokens を束縛したもの。
@@ -327,26 +327,11 @@ function addPanelBulletsCard(slide, x, y, w, h, title, items, opts = {}) {
     line: { color: variant.bodyBorderColor, width: 0.5 },
   });
 
-  // 行頭位置の計算:
-  //   そのカード内で最長の item の「bullet + テキスト」の視覚幅を見積もり、その
-  //   ブロックがカード幅で左右中央に来る位置を、全 item 共通の x として使う。
-  //   これにより全 item の bullet 列が垂直に揃い、最長の行が見た目上カード中央に
-  //   くる。短い item は同じ x から始まり、右側に余白ができる。
-  //
-  //   bullet + 字間スペースは常に「全角 2 字相当」で見積もる（bulletGapCharUnits）。
-  //   実描画の bullet 幅 + tab 幅がフォント・レンダラによって揺れるため、余裕を持って
-  //   2 字換算にすることで、短い item でも視覚的な中央寄せがずれにくくなる。
-  const charWidthIn = (PANEL_BULLETS.itemFontSize / 72) * CARD.charWMultiplier;
-  const bulletGapIn = charWidthIn * PANEL_BULLETS.bulletGapCharUnits;
-  const maxChars = Math.max(...items.map((it) => visualCharWidth(it)));
-  const longestVisualW = bulletGapIn + maxChars * charWidthIn;
-  const innerLeft = x + PANEL_CARD.itemPadSide;
+  // 行頭位置: 左余白は itemPadLeft（itemPadSide の 2 倍）、右余白は itemPadSide。
+  // 全 item の bullet 列は textX に垂直に揃う。
   const innerRight = x + w - PANEL_CARD.itemPadSide;
-  // 中央寄せ位置がカード内側左端より外側になる場合は左端でクランプ（最長 item が
-  // カード幅を埋めるケース）。テキスト幅も右内側端まで使えるように広げる。
-  const centerX = x + (w - longestVisualW) / 2;
-  const textX = Math.max(innerLeft, centerX);
-  const textW = Math.max(longestVisualW, innerRight - textX);
+  const textX = x + PANEL_BULLETS.itemPadLeft;
+  const textW = innerRight - textX;
 
   // 上下端の item がカード上下端と近接して見えるのを避けるため、行間と同じ量
   // （PANEL_BULLETS.bodyPadY = itemRowH / 2）だけ ボディ内側から下げて配置する。
