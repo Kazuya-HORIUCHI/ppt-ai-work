@@ -25,16 +25,21 @@ const SLIDE = {
   width: 13.333,
   height: 7.5,
   marginX: 0.65,
-  titleY: 0.45,
-  titleH: 0.60,
-  accentLineY: 1.06,
-  accentLineH: 0.04,
-  messageY: 1.40,
-  messageH: 0.55,
+  // タイトル（中央揃え・28pt）。titleY/titleH の中心 ≈ 0.93 in は参照デザインのトレース値
+  titleY: 0.55,
+  titleH: 0.75,
+  // サブタイトル（中央揃え・14pt・濃グレー）
+  messageY: 1.38,
+  messageH: 0.50,
   contentY: 2.05,
   contentH: 4.85,
-  footerY: 7.05,
+  // セクションラベル（左上）。marginX より外側に置き、本文グリッドと独立させる
+  sectionLabelX: 0.38,
+  sectionLabelY: 0.25,
+  // ページ番号（右下）。右端からの inset は marginX より狭く、隅に寄せる
+  footerY: 7.10,
   footerH: 0.30,
+  pageNumRightInset: 0.30,
 };
 
 const CONTENT_W = SLIDE.width - SLIDE.marginX * 2;
@@ -116,8 +121,8 @@ const PANEL_BULLETS = {
 // size は pt、lineSpacing は倍率、paraSpaceAfterPt は pt 単位。
 const TYPOGRAPHY = {
   // 各スライド上部
-  slideTitle:         { size: 23, bold: true },
-  slideMessage:       { size: 15, bold: true },
+  slideTitle:         { size: 28, bold: true },
+  slideMessage:       { size: 13, bold: true },
   // フッター
   footer:             { size: 9 },
   // スライドに直貼りする箇条書き（カードに入らない場合）

@@ -31,6 +31,7 @@ function cardHeight(title, body, w) {
 }
 
 // ---------- 共通コンポーネント ----------
+// タイトル（中央揃え）+ サブタイトル（中央揃え・濃グレー）。
 function addTitle(slide, title, message) {
   slide.addText(title, {
     x: SLIDE.marginX,
@@ -41,23 +42,8 @@ function addTitle(slide, title, message) {
     fontSize: TYPOGRAPHY.slideTitle.size,
     bold: TYPOGRAPHY.slideTitle.bold,
     color: COLORS.text,
+    align: "center",
     valign: "middle",
-  });
-  // アクセント線はタイトルの実描画幅に合わせる。
-  // CJK 文字は em-square (fontSize/72 in) でほぼ等幅に描画される。
-  // 実測でわずかに短くなるため、ACCENT_LINE_W_FACTOR で微補正する。
-  const ACCENT_LINE_W_FACTOR = 1.04;
-  const accentLineW = Math.min(
-    visualCharWidth(title) * (TYPOGRAPHY.slideTitle.size / 72) * ACCENT_LINE_W_FACTOR,
-    CONTENT_W
-  );
-  slide.addShape(ShapeType.rect, {
-    x: SLIDE.marginX,
-    y: SLIDE.accentLineY,
-    w: accentLineW,
-    h: SLIDE.accentLineH,
-    fill: { color: COLORS.accent },
-    line: { type: "none" },
   });
   if (message) {
     slide.addText(message, {
@@ -67,29 +53,32 @@ function addTitle(slide, title, message) {
       h: SLIDE.messageH,
       fontFace: FONT.body,
       fontSize: TYPOGRAPHY.slideMessage.size,
-      color: COLORS.accent,
+      color: COLORS.subText,
       bold: TYPOGRAPHY.slideMessage.bold,
+      align: "center",
       valign: "top",
     });
   }
 }
 
+// ページ共通ラベルの描画。セクションラベルは左上、ページ番号（現在ページのみ）は右下隅。
+// どのスライドに何を描くかの判断（ポリシー）は core/engine.js 側にある。
 function addFooter(slide, pageNumber, totalPages, sectionLabel) {
   if (sectionLabel) {
     slide.addText(sectionLabel, {
-      x: SLIDE.marginX,
-      y: SLIDE.footerY,
+      x: SLIDE.sectionLabelX,
+      y: SLIDE.sectionLabelY,
       w: CONTENT_W * 0.7,
-      h: SLIDE.footerH,
+      h: 0.3,
       fontFace: FONT.body,
       fontSize: TYPOGRAPHY.footer.size,
       color: COLORS.muted,
     });
   }
-  slide.addText(`${pageNumber} / ${totalPages}`, {
-    x: SLIDE.width - SLIDE.marginX - 1.5,
+  slide.addText(String(pageNumber), {
+    x: SLIDE.width - SLIDE.pageNumRightInset - 1.0,
     y: SLIDE.footerY,
-    w: 1.5,
+    w: 1.0,
     h: SLIDE.footerH,
     fontFace: FONT.body,
     fontSize: TYPOGRAPHY.footer.size,
