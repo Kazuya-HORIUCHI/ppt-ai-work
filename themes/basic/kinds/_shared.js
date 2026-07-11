@@ -56,7 +56,7 @@ function panelRowY(rowH) {
 // 取り、カードはコンテンツ領域内で水平中央に配置する。3 枚配置は左寄せで詰める。
 //
 // 2 枚配置のみ、最長 item が 17 字を超えたら cardW を伸ばす。1 全角 = 0.192 in
-// (trio worst-case) を基準に必要な innerW を求め、cardW = innerW + 2 × itemPadSide。
+// (cards 3 枚配置の worst-case) を基準に必要な innerW を求め、cardW = innerW + 2 × itemPadSide。
 // コンテンツ領域内に収まる最大値で頭打ち。3 枚配置 / 17 字以内の 2 枚配置は
 // defaultCardW を使う。
 //

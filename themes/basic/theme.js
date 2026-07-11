@@ -18,8 +18,7 @@ module.exports = {
     "key-takeaway":    require("./kinds/key-takeaway"),
     "data-table":      require("./kinds/data-table"),
     // 比較系
-    "comparison-2":    require("./kinds/comparison-2"),
-    "trio":            require("./kinds/trio"),
+    "cards":           require("./kinds/cards"),
     "panel-cards":     require("./kinds/panel-cards"),
     "panel-bullets":   require("./kinds/panel-bullets"),
     // 写真系

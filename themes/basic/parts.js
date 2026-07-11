@@ -8,7 +8,6 @@ const {
   FONT,
   SLIDE,
   CONTENT_W,
-  TWO_COL,
   CARD,
   PANEL_CARD,
   PANEL_CARD_VARIANTS,
@@ -118,18 +117,17 @@ function addBullets(slide, items, x, y, w, h, style) {
   });
 }
 
+// カード背景は枠線なし・直角のフラットな塗りのみ（variant は fill と title 色で表現する）。
 function addCard(slide, x, y, w, h, title, body, opts = {}) {
   const fillColor = opts.fillColor || COLORS.bgSubtle;
-  const borderColor = opts.borderColor || COLORS.border;
   const titleColor = opts.titleColor || COLORS.accent;
-  slide.addShape(ShapeType.roundRect, {
+  slide.addShape(ShapeType.rect, {
     x,
     y,
     w,
     h,
     fill: { color: fillColor },
-    line: { color: borderColor, width: 0.5 },
-    rectRadius: 0.08,
+    line: { type: "none" },
   });
   const innerX = x + CARD.padSide;
   const innerW = w - CARD.padSide * 2;
@@ -172,19 +170,6 @@ function addCardRow(slide, y, cards) {
     addCard(slide, c.x, y, c.w, rowH, c.title, c.body, c.opts || {});
   });
   return rowH;
-}
-
-// TWO_COL の左右に2枚のカードを配置する糖衣構文。cards = [left, right]。
-function addTwoColRow(slide, y, cards) {
-  return addCardRow(
-    slide,
-    y,
-    cards.map((c, i) => ({
-      x: i === 0 ? TWO_COL.leftX : TWO_COL.rightX,
-      w: TWO_COL.colW,
-      ...c,
-    }))
-  );
 }
 
 // ---------- 見出し帯付きパネルカード（タイトル帯 + 区切り線つきリスト） ----------
@@ -281,7 +266,7 @@ function addPanelCardRow(slide, y, cards) {
 // ---------- 見出し帯付きパネルカード（箇条書きバージョン） ----------
 //
 // panel-cards のレイアウト・寸法・variant 体系をそのまま流用し、items の表示だけを
-// 「菱形マーカー付きの左寄せ箇条書き」（comparison-2 等と同じ表現）に差し替えたバージョン。
+// 「菱形マーカー付きの左寄せ箇条書き」（cards 等と同じ表現）に差し替えたバージョン。
 // 1 item = 1 行（panel-cards と同じ itemRowH ぶんの行高）を前提とし、各行はカードの
 // 内側左端から描画する。区切り線・タイトル帯・本文枠線・全スロット分のセパレータは
 // panel-cards と同じ仕様で出る。
@@ -441,7 +426,6 @@ module.exports = {
   addBullets,
   addCard,
   addCardRow,
-  addTwoColRow,
   addPanelCard,
   addPanelCardRow,
   addPanelBulletsCard,

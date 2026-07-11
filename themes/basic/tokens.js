@@ -52,12 +52,13 @@ const TWO_COL = {
   y: SLIDE.contentY,
 };
 
-// カードの配色プリセット（addCard の opts に渡す）
+// カードの配色プリセット（addCard の opts に渡す）。
+// カードは枠線なしのフラット塗りなので、variant は fill とタイトル色の組で表現する。
 const CARD_VARIANTS = {
-  neg:    { fillColor: COLORS.negBg,       borderColor: COLORS.negBorder, titleColor: COLORS.negBorder },
-  pos:    { fillColor: COLORS.posBg,       borderColor: COLORS.posBorder, titleColor: COLORS.posBorder },
-  accent: { fillColor: COLORS.accentLight, borderColor: COLORS.accent,    titleColor: COLORS.accent    },
-  gray:   { fillColor: COLORS.bgSubtle,    borderColor: COLORS.border,    titleColor: COLORS.text      },
+  neg:    { fillColor: COLORS.negBg,       titleColor: COLORS.negBorder },
+  pos:    { fillColor: COLORS.posBg,       titleColor: COLORS.posBorder },
+  accent: { fillColor: COLORS.accentLight, titleColor: COLORS.accent    },
+  gray:   { fillColor: COLORS.bgSubtle,    titleColor: COLORS.text      },
 };
 
 // カード／ボックスの内側余白・本文高さ推定パラメータ（幾何のみ）
@@ -66,10 +67,10 @@ const CARD_VARIANTS = {
 //   1 文字あたりの推定幅 = (fontSize / 72) * charWMultiplier (inches)。
 //   実描画（Yu Gothic, 12pt）で 1 行に収まる字数の実測上限と、
 //   Math.floor(usableW / charWIn) の結果が一致する最大値を逆算する:
-//     comparison-2 (usableW = 5.2065 in, 実測上限 29 字) → multiplier ≤ 5.2065 / 29 / (12/72) ≈ 1.0772
-//     trio        (usableW = 3.258 in,  実測上限 17 字) → multiplier ≤ 3.258  / 17 / (12/72) ≈ 1.1499
-//   comparison-2 側がより厳しい上限を課すため、その制約を満たす値として 1.07 を採用。
-//   trio 側は実測 17 字に対して formula は 18 字/行と算出する（やや楽観的）が、
+//     cards 2 枚配置 (usableW = 5.2065 in, 実測上限 29 字) → multiplier ≤ 5.2065 / 29 / (12/72) ≈ 1.0772
+//     cards 3 枚配置 (usableW = 3.258 in,  実測上限 17 字) → multiplier ≤ 3.258  / 17 / (12/72) ≈ 1.1499
+//   2 枚配置側がより厳しい上限を課すため、その制約を満たす値として 1.07 を採用。
+//   3 枚配置側は実測 17 字に対して formula は 18 字/行と算出する（やや楽観的）が、
 //   17 字ルールを README/SKILL で守らせている限りカード高の不足は発生しない。
 //   1.07 未満まで下げると、長い本文が想定外に 1 行扱いされ、カード高が不足するリスクが増える。
 const CARD = {
@@ -95,7 +96,7 @@ const PANEL_CARD = {
 };
 
 // panel-card のカラー variant。タイトル帯と本文枠線をセットで切り替える。
-// 既定は accent（テーマ青）。pos / neg は comparison-2 と同じ色味を流用する。
+// 既定は accent（テーマ青）。pos / neg は cards と同じ色味を流用する。
 const PANEL_CARD_VARIANTS = {
   accent: { titleBarColor: COLORS.accent,    bodyBorderColor: COLORS.border },
   pos:    { titleBarColor: COLORS.posBorder, bodyBorderColor: COLORS.posBorder },
