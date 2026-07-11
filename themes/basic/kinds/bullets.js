@@ -1,16 +1,32 @@
-// kind: bullets — 全幅の箇条書きのみのスライド。
-const { SLIDE, CONTENT_W, TYPOGRAPHY } = require("../tokens");
+// kind: bullets — 全幅の箇条書きスライド。
+// コンテンツ領域全面にアクセント色の枠（直角・細線・背景色塗り）を描き、
+// その内側に箇条書きを配置する。枠の大きさは items の量によらず固定。
+const { COLORS, SLIDE, CONTENT_W, TYPOGRAPHY } = require("../tokens");
 const { addTitle, addBullets } = require("../parts");
+const { ShapeType } = require("../../../core/engine");
+
+// 枠内側の余白
+const PAD_SIDE = 0.35;
+const PAD_TOP = 0.30;
+const PAD_BOTTOM = 0.30;
 
 module.exports = function renderBullets(slide, spec) {
   addTitle(slide, spec.title, spec.message);
+  slide.addShape(ShapeType.rect, {
+    x: SLIDE.marginX,
+    y: SLIDE.contentY,
+    w: CONTENT_W,
+    h: SLIDE.contentH,
+    fill: { color: COLORS.bg },
+    line: { color: COLORS.accent, width: 1.0 },
+  });
   addBullets(
     slide,
     spec.items,
-    SLIDE.marginX,
-    SLIDE.contentY,
-    CONTENT_W,
-    SLIDE.contentH,
+    SLIDE.marginX + PAD_SIDE,
+    SLIDE.contentY + PAD_TOP,
+    CONTENT_W - PAD_SIDE * 2,
+    SLIDE.contentH - PAD_TOP - PAD_BOTTOM,
     TYPOGRAPHY.slideBullet
   );
 };
