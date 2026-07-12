@@ -153,6 +153,8 @@ const TYPOGRAPHY = {
   cardBullet:         { size: 13, lineSpacing: 1.2, paraSpaceAfterPt: 24 },
   // 表
   tableBody:          { size: 11 },
+  // key-takeaway の結論テキスト
+  takeaway:           { size: 36, bold: true, lineSpacing: 1.3 },
   // タイトルスライド
   titleSlideEyebrow:  { size: 16, bold: true },
   titleSlideHeading:  { size: 36, bold: true, lineSpacing: 1.2 },
