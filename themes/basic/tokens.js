@@ -75,10 +75,16 @@ const CARD_VARIANTS = {
 //   1.07 未満まで下げると、長い本文が想定外に 1 行扱いされ、カード高が不足するリスクが増える。
 const CARD = {
   padTop: 0.22,
-  padBottom: 0.34,
+  // 下余白。最終 bullet の paraSpaceAfter は cardHeight 側でカード高から差し引くため、
+  // カード下端の見た目の余白は実質この値（+ 高さ推定の safety ぶんの緩み）で決まる。
+  // 0.30 では最終 bullet がカード下端に詰まって見えたため 0.42 に広げた
+  // （旧実装の実効下余白 ≈ 0.67 と 0.30 の中間）。
+  padBottom: 0.42,
   padSide: 0.18,
   titleH: 0.28,
-  titleBodyGap: 0.10,
+  // タイトルと本文の間隔。bullet の行ピッチ（0.55 in）による bullet 間の空きと
+  // 釣り合って見える値として決める。
+  titleBodyGap: 0.26,
   bulletIndentIn: 0.30,
   charWMultiplier: 1.07,
   heightSafety: 1.05,
@@ -141,7 +147,10 @@ const TYPOGRAPHY = {
   // カード内
   cardTitle:          { size: 13, bold: true },
   cardBody:           { size: 12, lineSpacing: 1.3 },
-  cardBullet:         { size: 12, lineSpacing: 1.25, paraSpaceAfterPt: 8 },
+  // cardBullet はフォントサイズを panel-bullets（PANEL_BULLETS.itemFontSize = 13pt）に揃え、
+  // 1 行 bullet のピッチ（size × lineSpacing + paraSpaceAfterPt = 15.6 + 24 = 39.6pt = 0.55 in）が
+  // panel-bullets の行高（PANEL_CARD.itemRowH = 0.55 in）と一致するように行間を取る。
+  cardBullet:         { size: 13, lineSpacing: 1.2, paraSpaceAfterPt: 24 },
   // 表
   tableBody:          { size: 11 },
   // タイトルスライド

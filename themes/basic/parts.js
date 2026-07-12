@@ -26,7 +26,13 @@ function estimateBodyHeight(body, innerW) {
 function cardHeight(title, body, w) {
   const innerW = w - CARD.padSide * 2;
   const bodyH = estimateBodyHeight(body, innerW);
-  return CARD.padTop + CARD.titleH + CARD.titleBodyGap + bodyH + CARD.padBottom;
+  // bullet 配列の場合、推定 bodyH には最終 bullet の paraSpaceAfter が含まれるが、
+  // これは文末の空きでありカードの下余白と二重になる。カード高からは差し引き、
+  // 下余白は padBottom 側で管理する。
+  const trailingPara = Array.isArray(body)
+    ? TYPOGRAPHY.cardBullet.paraSpaceAfterPt / 72
+    : 0;
+  return CARD.padTop + CARD.titleH + CARD.titleBodyGap + bodyH - trailingPara + CARD.padBottom;
 }
 
 // ---------- 共通コンポーネント ----------
