@@ -9,7 +9,7 @@ module.exports = {
     title: "サンプル資料 — 全 kind の表示確認",
     eyebrow: "テンプレ動作確認",
     heading: "全 kind デモ\n— スライド構築テンプレ集",
-    subtitle: "title-slide / divider / bullets / table / 比較 / 図形系（flow・matrix・pyramid 等）",
+    subtitle: "title-slide / divider / bullets / table / 比較 / 図形系（flow・process 等）",
     meta: "作成日: 2026-06-29",
   },
 
@@ -485,58 +485,6 @@ module.exports = {
         { label: "収束", description: "評価軸で絞り、トレードオフを文書化する" },
         { label: "検証", description: "PoC または利害関係者レビューで仮説を検証" },
         { label: "決定", description: "判断理由と未決事項を ADR として記録" },
-      ],
-    },
-
-    {
-      kind: "matrix-2x2",
-      section: "diagram",
-      title: "kind: matrix-2x2 ─ 4 象限分類",
-      message: "2 軸で 4 象限に分類する。象限ごとに短い解釈を添える。",
-      xAxis: { low: "影響度: 低", high: "影響度: 高" },
-      yAxis: { high: "緊急度: 高", low: "緊急度: 低" },
-      quadrants: {
-        topLeft: {
-          title: "今すぐ取り掛かる候補",
-          body: "緊急度が高く影響度は限定的。短時間で片付ける。",
-        },
-        topRight: {
-          title: "最優先",
-          body: "緊急かつ影響大。リソースを集中投下する。",
-        },
-        bottomLeft: {
-          title: "捨てる候補",
-          body: "影響度も緊急度も低い。やらない判断をする。",
-        },
-        bottomRight: {
-          title: "計画的に投資する",
-          body: "影響が大きいが急がない。中長期の段取りに組み込む。",
-        },
-      },
-    },
-
-    {
-      kind: "pyramid",
-      section: "diagram",
-      title: "kind: pyramid ─ 階層・優先度（layout: centered, 既定）",
-      message: "上位ほど抽象度・優先度が高い概念に。各層に label と短い説明をインライン配置。",
-      tiers: [
-        { label: "Why", description: "解こうとしている問題と判断理由" },
-        { label: "What", description: "実現する具体的な成果物と範囲" },
-        { label: "How", description: "実行手段とそのスケジュール" },
-      ],
-    },
-
-    {
-      kind: "pyramid",
-      section: "diagram",
-      title: "kind: pyramid ─ 階層・優先度（layout: side）",
-      message: "ピラミッドを左寄せし、説明文を右側に並べる構成。長めの説明文に向く。",
-      layout: "side",
-      tiers: [
-        { label: "Why", description: "解こうとしている問題と判断理由。プロジェクトの存在意義に直結する。" },
-        { label: "What", description: "実現する具体的な成果物と範囲。Why に従属して定義される。" },
-        { label: "How", description: "実行手段とそのスケジュール。チームの能力・期間制約を踏まえる。" },
       ],
     },
 

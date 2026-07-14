@@ -133,8 +133,6 @@ module.exports = {
 |---|---|
 | [`flow-diagram`](#flow-diagram) | A → B → C の直列フロー |
 | [`process-stages`](#process-stages) | 番号付き工程 |
-| [`matrix-2x2`](#matrix-2x2) | 2 軸 4 象限分類 |
-| [`pyramid`](#pyramid) | 階層・優先度 |
 
 > 循環プロセスの kind（`cycle`）は描画品質が pptxgenjs の図形プリミティブの制約で安定しなかったため、本バージョンでは未提供。必要な場合は `flow-diagram` または `process-stages` で代替する。
 
@@ -154,8 +152,6 @@ module.exports = {
 | `panel-cards` と同じ枠組みで、各 item を箇条書きとして並べたい | `panel-bullets` |
 | 事例紹介で写真とテキストを同列に並べたい | `photo-card` |
 | **時系列・手順・依存関係（順序が意味を持つ）** | `flow-diagram` / `process-stages` |
-| **2 軸で分類できる項目群** | `matrix-2x2` |
-| **抽象度・優先度の階層** | `pyramid` |
 
 **警告サイン: 1 つの箇条書きアイテムが 30 文字を超えてくる / アイテム数が 7 個以上に膨らむ場合は、文字の構造化に失敗している可能性が高い。図形系 kind を再検討すること。**
 
@@ -534,67 +530,6 @@ A → B → C の直列フロー。各ステップに短い説明を付ける。
 
 - `flow-diagram`: 状態間の遷移を強調（A → B）。プロセス図 / データフロー向き
 - `process-stages`: 順序とフェーズ感を強調（第 1 段階 / 第 2 段階）。プロジェクト工程向き
-
-### matrix-2x2
-
-2 軸で 4 象限に分類する。
-
-```js
-{
-  kind: "matrix-2x2",
-  section: "diagram",
-  title: "スライドタイトル",
-  message: "サブメッセージ（省略可）",
-  xAxis: { low: "左端ラベル", high: "右端ラベル" },
-  yAxis: { high: "上端ラベル", low: "下端ラベル" },
-  quadrants: {
-    topLeft:     { title: "象限名", body: "本文" | [...] },
-    topRight:    { title: "象限名", body: "..." },
-    bottomLeft:  { title: "象限名", body: "..." },
-    bottomRight: { title: "象限名", body: "..." },
-  },
-}
-```
-
-**注意**
-
-- 軸の向きは慣習に従う:
-  - X 軸: 左が低い / 右が高い
-  - Y 軸: 上が高い / 下が低い
-- 4 象限すべてに何か書くこと（空欄は不可）
-
-### pyramid
-
-階層・優先度を視覚化する。
-
-```js
-{
-  kind: "pyramid",
-  section: "diagram",
-  title: "スライドタイトル",
-  message: "サブメッセージ（省略可）",
-  layout: "centered" | "side",   // 省略時 "centered"
-  tiers: [
-    { label: "頂点に近い層", description: "説明（省略可）" },
-    ...
-    { label: "底辺の層", description: "..." },
-  ],
-}
-```
-
-**layout の選び方**
-
-| layout | 構成 | 適合する場面 |
-|---|---|---|
-| `centered`（既定） | ピラミッドを中央配置。各層内に label + 短い説明をインライン表示 | 説明文が短い（〜25 文字程度）。階層感を最も強く出したい |
-| `side` | ピラミッドを左寄せ。説明文を右側に並べる | 説明文が長く、ピラミッド内に収めると窮屈な場合 |
-
-**制約**
-
-- `tiers[0]` が頂点（最も狭い層）、配列末尾が底辺（最も広い層）
-- `tiers.length` は **3〜5 推奨**
-- 「上が重要」「上が抽象度が高い」「上が優先順位が高い」など、視覚的な上下関係に意味があるときに使う
-- `centered` で description が長すぎると最上段（最も狭い層）で折り返してオーバーフローする。長文を載せたい場合は `side` を選ぶ
 
 ---
 

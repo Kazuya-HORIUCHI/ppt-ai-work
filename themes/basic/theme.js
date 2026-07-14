@@ -26,7 +26,5 @@ module.exports = {
     // 図形系
     "flow-diagram":    require("./kinds/flow-diagram"),
     "process-stages":  require("./kinds/process-stages"),
-    "matrix-2x2":      require("./kinds/matrix-2x2"),
-    "pyramid":         require("./kinds/pyramid"),
   },
 };
