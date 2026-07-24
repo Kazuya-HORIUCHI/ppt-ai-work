@@ -35,7 +35,7 @@ function sectionLabel(deck, spec) {
 function run(theme, argv) {
   const [, , deckArg, outArg] = argv;
   if (!deckArg || !outArg) {
-    console.error(`Usage: node themes/${theme.name}/renderer.js <deck.js> <out.pptx>`);
+    console.error(`Usage: node deckgen/themes/${theme.name}/renderer.js <deck.js> <out.pptx>`);
     process.exit(1);
   }
   const deck = require(path.resolve(deckArg));

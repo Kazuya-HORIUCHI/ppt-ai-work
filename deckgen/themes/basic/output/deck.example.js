@@ -1,8 +1,9 @@
-// deck.example.js
-// 全 kind を網羅したサンプル deck。renderer の動作確認と
+// themes/basic/output/deck.example.js
+// basic テーマの全 kind を網羅したサンプル deck。renderer の動作確認と
 // 各 kind のフィールド埋め方のリファレンスを兼ねる。
 //
-// 実行: node themes/basic/renderer.js deck.example.js deck.example.pptx
+// 実行 (リポジトリルートから):
+//   node deckgen/themes/basic/renderer.js deckgen/themes/basic/output/deck.example.js deckgen/themes/basic/output/deck.example.pptx
 
 module.exports = {
   meta: {
@@ -434,7 +435,7 @@ module.exports = {
         ],
       },
       image: {
-        src: "assets/samples/case-1.png",
+        src: "../../../assets/samples/case-1.png",
       },
     },
 
