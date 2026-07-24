@@ -13,3 +13,6 @@ bk-claude/
 # PowerPoint files
 *.ppt
 *.pptx
+
+# ただしテーマの example 出力は参照用として追跡する
+!deckgen/themes/*/output/deck.example.pptx
