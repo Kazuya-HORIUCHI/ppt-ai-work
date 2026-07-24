@@ -1,6 +1,6 @@
 // kind: bullets — 全幅の箇条書きスライド。
-// コンテンツ領域全面にアクセント色の枠（直角・細線・背景色塗り）を描き、
-// その内側に箇条書きを配置する。枠の大きさは items の量によらず固定。
+// コンテンツ領域全面にカードと同じ枠線なしのグレー背景（bgSubtle）を敷き、
+// その内側に箇条書きを配置する。背景の大きさは items の量によらず固定。
 const { COLORS, SLIDE, CONTENT_W, TYPOGRAPHY } = require("../tokens");
 const { addTitle, addBullets } = require("../parts");
 const { ShapeType } = require("../../../core/engine");
@@ -17,8 +17,8 @@ module.exports = function renderBullets(slide, spec) {
     y: SLIDE.contentY,
     w: CONTENT_W,
     h: SLIDE.contentH,
-    fill: { color: COLORS.bg },
-    line: { color: COLORS.accent, width: 1.0 },
+    fill: { color: COLORS.bgSubtle },
+    line: { type: "none" },
   });
   addBullets(
     slide,
